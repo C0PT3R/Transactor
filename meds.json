@@ -1,0 +1,71 @@
+{
+	"options": {
+		"endDate": [2030, 1],
+		"initialBalance": 92.62
+	},
+	"payments": [
+		{
+			"name": "Virement",
+			"recurrence": "weekly",
+			"startDate": [2026, 5, 7]
+		}
+	],
+	"bills": [
+		{
+			"name": "Meds janvier",
+			"amount": 150.00,
+			"recurrence": "yearly",
+			"month": 1,
+			"day": 1
+		},
+		{
+			"name": "Meds février",
+			"amount": 100.00,
+			"recurrence": "yearly",
+			"month": 2,
+			"day": 1
+		},
+		{
+			"name": "Meds mars",
+			"amount": 100.00,
+			"recurrence": "yearly",
+			"month": 3,
+			"day": 1
+		},
+		{
+			"name": "Meds avril",
+			"amount": 100.00,
+			"recurrence": "yearly",
+			"month": 4,
+			"day": 1
+		},
+		{
+			"name": "Meds mai",
+			"amount": 100.00,
+			"recurrence": "yearly",
+			"month": 5,
+			"day": 1
+		},
+		{
+			"name": "Meds juin",
+			"amount": 100.00,
+			"recurrence": "yearly",
+			"month": 6,
+			"day": 1
+		},
+		{
+			"name": "Meds juillet",
+			"amount": 100.00,
+			"recurrence": "yearly",
+			"month": 7,
+			"day": 1
+		},
+		{
+			"name": "Meds août",
+			"amount": 50.00,
+			"recurrence": "yearly",
+			"month": 8,
+			"day": 1
+		}
+	]
+}
