@@ -7,9 +7,9 @@ export default class WeeklySchedule extends Schedule {
     #weekday
 
 
-    constructor(startDate: SimDate, endDate?: SimDate) {
+    constructor(weekday: number, startDate?: SimDate, endDate?: SimDate) {
         super(startDate, endDate)
-        this.#weekday = startDate.getWeekDay()
+        this.#weekday = weekday
     }
 
 

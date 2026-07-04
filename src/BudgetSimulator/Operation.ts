@@ -37,12 +37,12 @@ export default class Operation {
 		this.name = params.name
 		this.amount = params.amount
 		this.scheduleType = params.schedule.type
-		this.delay = params.schedule.delay || 0
+		this.delay = params.schedule.processingDelay || 0
 		this.skipWeekend = (params.schedule.skipWeekend === false) ? false : true
 
 		switch (params.schedule.type) {
-			case "weekly":   this.schedule = new WeeklySchedule(startDate, endDate); break
-			case "biWeekly": this.schedule = new BiweeklySchedule(startDate, endDate); break
+			case "weekly":   this.schedule = new WeeklySchedule(day, startDate, endDate); break
+			case "biWeekly": this.schedule = new BiweeklySchedule(day, startDate, endDate); break
 			case "monthly":  this.schedule = new MonthlySchedule(day, startDate, endDate); break
 			case "yearly":   this.schedule = new YearlySchedule(day, month, startDate, endDate); break
 			default: throw new Error(params.schedule.type + " is an unknown schedule type")

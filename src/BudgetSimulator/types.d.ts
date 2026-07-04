@@ -36,7 +36,7 @@ declare type schedule_t = {
 	day?: number
 	month?: number
 	year?: number
-	delay?: number
+	processingDelay?: number
 	startDate?: date_t
 	endDate?: date_t
 	skipWeekend?: boolean

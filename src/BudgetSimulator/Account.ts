@@ -31,6 +31,12 @@ export default class Account {
 
 
 	public addTransaction(operation: Operation, date: SimDate): Transaction {
+		// Postpone to next business day if required...
+		if (operation.skipWeekend) date.toNextBusinessDay()
+
+		// ... and THEN add delay if specified
+		date.shift(operation.delay)
+
 		const transaction = new Transaction(operation, date)
 		this.#transactions.push(transaction)
 		return transaction
@@ -55,12 +61,6 @@ export default class Account {
 			.forEach(t => {
 				// Skip if transaction is not on schedule
 				if (t.date < from || t.date > until) return
-
-				// Postpone to next business day if required...
-				if (t.operation.skipWeekend) t.date.toNextBusinessDay()
-
-				// ... and THEN add delay if specified
-				t.date.shift(t.operation.delay)
 
 				switch (t.operation.type) {
 					case "Payment":

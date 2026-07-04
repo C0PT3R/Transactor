@@ -8,7 +8,7 @@
 			"name": "Virement",
 			"schedule": {
 				"type": "weekly",
-				"startDate": [2026, 6, 4]
+				"day": 4
 			}
 		}
 	],
@@ -19,7 +19,7 @@
 			"schedule": {
 				"type": "monthly",
 				"day": 1,
-				"delay": 1
+				"processingDelay": 1
 			},
 			"transforms": [
 				{
