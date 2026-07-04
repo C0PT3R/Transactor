@@ -38,11 +38,11 @@ export default class SimDate {
 			this.#date.setHours(0, 0, 0, 0)
 		} else if (arguments.length == 1) {
 			this.#date = new Date()
-			this.setTime(yearOrTime)
+			this.setTime(yearOrTime as number)
 		} else {
-			month = month - 1 || 0
+			month = month ? month - 1 : 0
 			day = day || 1
-			this.#date = new Date(yearOrTime, month, day, 0, 0, 0, 0)
+			this.#date = new Date(yearOrTime as number, month, day, 0, 0, 0, 0)
 		}
 	}
 
@@ -110,10 +110,10 @@ export default class SimDate {
 
 
 	/**
-	 * Copies the SimDate. Useful if you want to modify a date without affecting the original one.
+	 * Creates a copy of the SimDate. Useful if you want to modify a date without affecting the original one.
 	 * @returns A copy of self
 	 */
-	public copy(): SimDate {
+	public duplicate(): SimDate {
 		return new SimDate(this.time)
 	}
 

@@ -1,5 +1,5 @@
 declare type operationType_t = "Payment" | "Bill"
-declare type recurrence_t = "daily"|"weekly"|"biWeekly"|"monthly"|"yearly"
+declare type scheduleType_t = "daily" | "weekly" | "biWeekly" | "monthly" | "yearly"
 
 declare type printer_t = (content: string) => void
 
@@ -9,7 +9,7 @@ declare type printer_t = (content: string) => void
 declare type date_t = [
 	number,
 	number,
-	number?						// default: 0
+	number?
 ]
 
 declare type config_t = {
@@ -19,30 +19,34 @@ declare type config_t = {
 }
 
 declare type options_t = {
-	startDate?: date_t			// default: undefined
+	startDate?: date_t
 	endDate: date_t
-	initialBalance?: number		// default: 0
+	initialBalance?: number
 }
 
 declare type operation_t = {
 	name: string
-	source: string
-	amount: number				// default: undefined
-	recurrence?: recurrence_t	// default: "monthly"
-	day: number
-	month?: number				// default: 0
-	delay?: number				// default: 0
-	startDate?: date_t			// default: null
-	endDate?: date_t			// default: null
-	skipWeekend?: boolean		// default: true
-	transforms?: transform_t[]	// default: undefined
+	amount: number
+	schedule: schedule_t
+	transforms?: transform_t[]
+}
+
+declare type schedule_t = {
+	type: scheduleType_t
+	day?: number
+	month?: number
+	year?: number
+	delay?: number
+	startDate?: date_t
+	endDate?: date_t
+	skipWeekend?: boolean
 }
 
 declare type transform_t = {
 	date: date_t
 	params: {
 		amount?: number				// default: undefined
-		recurrence?: recurrence_t	// default: undefined
+		recurrence?: scheduleType_t	// default: undefined
 		day?: number				// default: undefined
 	}
 }

@@ -1,25 +1,21 @@
-import SimDate from "../SimDate.js"
+import SimDate from "../SimDate.js";
 import Schedule from "./Schedule.js"
 
 
-export default class BiWeeklySchedule extends Schedule {
+export default class BiweeklySchedule extends Schedule {
 
-    #weekday: number
+    #weekday
 
-    constructor(
-        startDate: SimDate,
-        endDate?: SimDate | null
-    ) {
+
+    constructor(startDate: SimDate, endDate?: SimDate) {
         super(startDate, endDate)
-
-        this.#weekday = startDate.getWeekDay(false)
+        this.#weekday = startDate.getWeekDay(true)
     }
 
-    public matches(date: SimDate): boolean {
-        if (!this.isActive(date)) {
-            return false
-        }
 
+    public matches(date: SimDate): boolean {
+        if (!this.isActive(date)) return false
+        
         return date.getWeekDay(true) === this.#weekday
     }
 

@@ -1,5 +1,10 @@
+import BiweeklySchedule from "./schedules/BiweeklySchedule.js"
+import MonthlySchedule from "./schedules/MonthlySchedule.js"
 import Schedule from "./schedules/Schedule.js"
+import WeeklySchedule from "./schedules/WeeklySchedule.js"
+import YearlySchedule from "./schedules/YearlySchedule.js"
 import SimDate from "./SimDate.js"
+
 
 const yearLength = 365.25
 
@@ -14,49 +19,52 @@ const recurrenceRatios = {
 
 export default class Operation {
 
-	#type: operationType_t
-	#name: string
-	#amount: number | undefined
-	//#schedule: Schedule
-	#recurrence: recurrence_t
-	#day: number
-	#month: number
-	#startDate: SimDate | null
-	#endDate: SimDate | null
-	#delay: number
-	#skipWeekend: boolean
-
+	public type: operationType_t
+	public name: string
+	public amount: number
+	public scheduleType: scheduleType_t
+	public schedule: Schedule
+	public delay: number
+	public skipWeekend: boolean
 
 	public constructor(type: operationType_t, params: operation_t) {
-		this.#type = type
-		this.#name = params.name
-		this.#amount = params.amount
-		//this.#schedule = params.schedule
-		this.#recurrence = params.recurrence || "monthly"
-		this.#day = params.day
-		this.#month = params.month || 0
-		this.#delay = params.delay || 0
-		this.#startDate = params.startDate ? new SimDate(...params.startDate) : null
-		this.#endDate = params.endDate ? new SimDate(...params.endDate) : null
-		this.#skipWeekend = (params.skipWeekend === false) ? false : true
+		const day = params.schedule.day || 0
+		const month = params.schedule.month || 0
+		const startDate = params.schedule.startDate ? new SimDate(...params.schedule.startDate) : new SimDate(0)
+		const endDate = params.schedule.endDate ? new SimDate(...params.schedule.endDate) : undefined
+
+		this.type = type
+		this.name = params.name
+		this.amount = params.amount
+		this.scheduleType = params.schedule.type
+		this.delay = params.schedule.delay || 0
+		this.skipWeekend = (params.schedule.skipWeekend === false) ? false : true
+
+		switch (params.schedule.type) {
+			case "weekly":   this.schedule = new WeeklySchedule(startDate, endDate); break
+			case "biWeekly": this.schedule = new BiweeklySchedule(startDate, endDate); break
+			case "monthly":  this.schedule = new MonthlySchedule(day, startDate, endDate); break
+			case "yearly":   this.schedule = new YearlySchedule(day, month, startDate, endDate); break
+			default: throw new Error(params.schedule.type + " is an unknown schedule type")
+		}
 	}
 
 
 	public transform(params: transform_t["params"]) {
-		if (undefined !== params.amount) this.#amount = params.amount
-		if (undefined !== params.day)    this.#day = params.day
-		if (undefined !== params.recurrence) this.#recurrence = params.recurrence 
+		if (undefined !== params.amount) this.amount = params.amount
+		//if (undefined !== params.day)    this.#day = params.day
+		//if (undefined !== params.recurrence) this.#recurrence = params.recurrence 
 	}
 	
 
 	public setAmount(v: number) {
 		if (v < 0) return
-		this.#amount = v
+		this.amount = v
 	}
 
 
 	public get daily() {
-		return this.#amount / recurrenceRatios[this.#recurrence]
+		return this.amount ? this.amount / recurrenceRatios[this.scheduleType] : 0
 	}
 
 	public get weekly() {
@@ -74,16 +82,5 @@ export default class Operation {
 	public get yearly() {
 		return this.daily * recurrenceRatios["yearly"]
 	}
-	
-	public get type()        { return this.#type }
-	public get name()        { return this.#name }
-	public get amount()      { return this.#amount }
-	public get recurrence()  { return this.#recurrence }
-	public get day()         { return this.#day }
-	public get month()       { return this.#month }
-	public get delay()       { return this.#delay }
-	public get startDate()   { return this.#startDate }
-	public get endDate()     { return this.#endDate }
-	public get skipWeekend() { return this.#skipWeekend }
 
 }

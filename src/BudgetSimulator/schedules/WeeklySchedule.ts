@@ -1,26 +1,22 @@
-import SimDate from "../SimDate.js"
+import SimDate from "../SimDate.js";
 import Schedule from "./Schedule.js"
 
 
 export default class WeeklySchedule extends Schedule {
 
-	#weekday: number
+    #weekday
 
-	constructor(
-		startDate: SimDate,
-		endDate?: SimDate | null
-	) {
-		super(startDate, endDate)
 
-		this.#weekday = startDate.getWeekDay(false)
-	}
+    constructor(startDate: SimDate, endDate?: SimDate) {
+        super(startDate, endDate)
+        this.#weekday = startDate.getWeekDay()
+    }
 
-	public matches(date: SimDate): boolean {
-		if (!this.isActive(date)) {
-			return false
-		}
 
-		return date.getWeekDay(false) === this.#weekday
-	}
+    public matches(date: SimDate): boolean {
+        if (!this.isActive(date)) return false
+        
+        return date.getWeekDay() === this.#weekday
+    }
 
 }

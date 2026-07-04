@@ -4,26 +4,21 @@ import Schedule from "./Schedule.js"
 
 export default class YearlySchedule extends Schedule {
 
-    #weekday: number
+    #day
+    #month
 
-    constructor(
-        startDate: SimDate,
-        endDate?: SimDate | null
-    ) {
+
+    constructor(day: number, month: number, startDate?: SimDate, endDate?: SimDate) {
         super(startDate, endDate)
-
-        this.#weekday = startDate.getWeekDay(false)
+        this.#day = day
+        this.#month = month
     }
 
-    public matches(date: SimDate): boolean {
-        if (!this.isActive(date)) {
-            return false
-        }
 
-        return (
-            date.month === this.#month &&
-            date.day === this.#day
-        )
+    matches(date: SimDate) {
+        if (!this.isActive(date)) return false
+        
+        return (date.month === this.#month && date.day === this.#day)
     }
 
 }

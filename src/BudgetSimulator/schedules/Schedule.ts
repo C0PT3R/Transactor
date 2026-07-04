@@ -3,29 +3,26 @@ import SimDate from "../SimDate.js"
 
 export default abstract class Schedule {
 
-	protected startDate: SimDate | null
-	protected endDate: SimDate | null
+    public startDate: SimDate | undefined
+    public endDate: SimDate | undefined
 
-	constructor(
-		startDate?: SimDate | null,
-		endDate?: SimDate | null
-	) {
-		this.startDate = startDate || null
-		this.endDate = endDate || null
-	}
 
-	public isActive(date: SimDate): boolean {
-		if (this.startDate && date < this.startDate) {
-			return false
-		}
+    public constructor(startDate?: SimDate, endDate?: SimDate) {
+        this.startDate = startDate
+        this.endDate = endDate
+    }
 
-		if (this.endDate && date > this.endDate) {
-			return false
-		}
 
-		return true
-	}
+    public abstract matches(date: SimDate): boolean
 
-	public abstract matches(date: SimDate): boolean
 
+    public isActive(date: SimDate) {
+        if (this.startDate && date < this.startDate) {
+            return false
+        }
+        if (this.endDate && date > this.endDate) {
+            return false
+        }
+        return true
+    }
 }

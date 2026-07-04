@@ -9,8 +9,8 @@ export default class Account {
 	#transactions: Transaction[]
 
 
-	public constructor(balance: number = 0) {
-		this.#balance = balance
+	public constructor(initialBalance: number = 0) {
+		this.#balance = initialBalance
 		this.#transactions = []
 	}
 
@@ -30,19 +30,18 @@ export default class Account {
 	}
 
 
-	public createTransaction(operation: Operation, date: SimDate): Transaction {
-		// Postpone to next business day if required...
-		if (operation.skipWeekend) date.toNextBusinessDay()
-
-		// ... and THEN add delay if specified
-		date.shift(operation.delay)
-
+	public addTransaction(operation: Operation, date: SimDate): Transaction {
 		const transaction = new Transaction(operation, date)
 		this.#transactions.push(transaction)
 		return transaction
 	}
 
 
+	/**
+	 * Charges all transaction in the account, sorted by date
+	 * @param from 
+	 * @param until 
+	 */
 	public charge(from: SimDate, until: SimDate) {
 		this.#transactions
 			// Sort by date first and then by type
@@ -56,6 +55,12 @@ export default class Account {
 			.forEach(t => {
 				// Skip if transaction is not on schedule
 				if (t.date < from || t.date > until) return
+
+				// Postpone to next business day if required...
+				if (t.operation.skipWeekend) t.date.toNextBusinessDay()
+
+				// ... and THEN add delay if specified
+				t.date.shift(t.operation.delay)
 
 				switch (t.operation.type) {
 					case "Payment":
@@ -73,7 +78,7 @@ export default class Account {
 
 
 	public getLowestBalance(): Transaction {
-		let result: Transaction
+		let result: Transaction = {} as Transaction
 		let first = true
 
 		this.#transactions.forEach(t => {

@@ -1,26 +1,31 @@
 {
 	"options": {
-		"endDate": [2027, 7],
-		"initialBalance": 282.09
+		"endDate": [2028, 7],
+		"initialBalance": 184.01
 	},
 	"payments": [
 		{
 			"name": "Virement",
-			"recurrence": "weekly",
-			"startDate": [2021, 2, 4]
+			"schedule": {
+				"type": "weekly",
+				"startDate": [2026, 6, 4]
+			}
 		}
 	],
 	"bills": [
 		{
 			"name": "Loyer",
-			"amount": 595.00,
-			"day": 1,
-			"delay": 1,
+			"amount": 620.00,
+			"schedule": {
+				"type": "monthly",
+				"day": 1,
+				"delay": 1
+			},
 			"transforms": [
 				{
-					"date": [2026, 7, 1],
+					"date": [2027, 7, 1],
 					"params": {
-						"amount": 620.00
+						"amount": 650.00
 					}
 				}
 			]
@@ -28,47 +33,126 @@
 		{
 			"name": "Électricité",
 			"amount": 79.00,
-			"day": 5
+			"schedule": {
+				"type": "monthly",
+				"day": 5
+			}
 		},
 		{
 			"name": "Ass. auto",
-			"amount": 103.01,
-			"day": 15
+			"amount": 84.74,
+			"schedule": {
+				"type": "monthly",
+				"day": 15
+			}
 		},
 		{
 			"name": "Internet",
 			"amount": 79.33,
-			"day": 3
+			"schedule": {
+				"type": "monthly",
+				"day": 3
+			}
 		},
 		{
 			"name": "Cellulaire",
 			"amount": 63.87,
-			"day": 16
+			"schedule": {
+				"type": "monthly",
+				"day": 16
+			}
 		},
 		{
-			"name": "Frais BMO",
-			"amount": 17.95,
-			"day": -1
-		},
-		{
-			"name": "Prêt auto",
-			"amount": 250.41,
-			"recurrence": "biWeekly",
-			"startDate": [2023, 9, 14],
-			"delay": 1
-		},
-		{
-			"name": "Frais MC",
+			"name": "MC BMO",
 			"amount": 120.00,
-			"recurrence": "yearly",
-			"month": 2,
-			"day": 6
+			"schedule": {
+				"type": "yearly",
+				"month": 2,
+				"day": 6
+			}
+		},
+
+
+
+		{
+			"group": "health",
+			"name": "Meds janvier",
+			"amount": 150.00,
+			"schedule": {
+				"type": "yearly",
+				"month": 1,
+				"day": 15
+			}
 		},
 		{
-			"name": "Meds",
-			"source": "./meds.json",
-			"recurrence": "weekly",
-			"startDate": [2026, 5, 8]
+			"group": "health",
+			"name": "Meds février",
+			"amount": 100.00,
+			"schedule": {
+				"type": "yearly",
+				"month": 2,
+				"day": 15
+			}
+		},
+		{
+			"group": "health",
+			"name": "Meds mars",
+			"amount": 100.00,
+			"schedule": {
+				"type": "yearly",
+				"month": 3,
+				"day": 15
+			}
+		},
+		{
+			"group": "health",
+			"name": "Meds avril",
+			"amount": 100.00,
+			"schedule": {
+				"type": "yearly",
+				"month": 4,
+				"day": 15
+			}
+		},
+		{
+			"group": "health",
+			"name": "Meds mai",
+			"amount": 100.00,
+			"schedule": {
+				"type": "yearly",
+				"month": 5,
+				"day": 15
+			}
+		},
+		{
+			"group": "health",
+			"name": "Meds juin",
+			"amount": 100.00,
+			"schedule": {
+				"type": "yearly",
+				"month": 6,
+				"day": 15
+			}
+		},
+		{
+			"group": "health",
+			"name": "Meds juillet",
+			"amount": 100.00,
+			"schedule": {
+				"type": "yearly",
+				"month": 7,
+				"day": 15
+			}
+		},
+		{
+			"group": "health",
+			"name": "Meds août",
+			"amount": 50.00,
+			"schedule": {
+				"type": "yearly",
+				"month": 8,
+				"day": 15
+			}
 		}
 	]
 }

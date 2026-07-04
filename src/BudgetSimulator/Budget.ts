@@ -67,7 +67,7 @@ export default class Budget {
 		/// TODO: Do proper calculations
 		this.payments.forEach(payment => {
 			if (payment.amount === undefined) {
-				payment.setAmount(Math.ceil(this.bills.totals[payment.recurrence] * 100) / 100)
+				payment.setAmount(Math.ceil(this.bills.totals[payment.scheduleType] * 100) / 100)
 			}
 		})
 	}

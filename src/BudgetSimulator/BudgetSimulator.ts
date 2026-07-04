@@ -1,5 +1,13 @@
+/**
+ * 
+ * A small event-sourced cash-flow engine, where operations can have independent frequencies, start/end dates,
+ * and future parameter changes.
+ * 
+ */
+
 import Account from "./Account.js"
 import Budget from "./Budget.js"
+import HTMLRenderer from "./HTMLRenderer.js"
 import SimDate from "./SimDate.js"
 
 
@@ -13,7 +21,7 @@ export default class BudgetSimulator {
 
 
 	private constructor(config: config_t) {
-		// Stop execution if callee is outside the class.
+		// Prevent execution if callee is external.
 		if (!BudgetSimulator.#localConstruct_f)
 			throw new Error("Constructor is private. Use \"BudgetSimulator.fromFile(...)\" instead.")
 
@@ -49,16 +57,16 @@ export default class BudgetSimulator {
 
 		for (const billParams of this.#config.bills) {
 			// Check if operation will start after today AND before simulation end
-			if (billParams.startDate) {
-				const opStart = new SimDate(...billParams.startDate)
+			if (billParams.schedule.startDate) {
+				const opStart = new SimDate(...billParams.schedule.startDate)
 				if (opStart >= simStart && opStart < simEnd) {
 					transformDates.push(opStart)
 				}
 			}
 
 			// Check if operation will end after today AND before simulation end
-			if (billParams.endDate) {
-				const opEnd = new SimDate(...billParams.endDate)
+			if (billParams.schedule.endDate) {
+				const opEnd = new SimDate(...billParams.schedule.endDate)
 				if (opEnd >= simStart && opEnd < simEnd) {
 					transformDates.push(opEnd)
 				}
@@ -69,9 +77,6 @@ export default class BudgetSimulator {
 				for (const tr of billParams.transforms) {
 					const trDate = new SimDate(...tr.date)
 
-					// Skip if there's already a transformation on the same day...
-					if (transformDates.find(date => date === trDate)) continue
-
 					// Add to the list if it's inside simulation schedule
 					if (trDate >= simStart && trDate < simEnd)
 						transformDates.push(trDate)
@@ -79,8 +84,12 @@ export default class BudgetSimulator {
 			}
 		}
 
+		const uniqueDates = [...new Map(
+			transformDates.map(date => [date.time, date])
+		).values()]
+
 		// Return list sorted by date
-		return transformDates.sort((a, b) => a.time - b.time)
+		return uniqueDates.sort((a, b) => a.time - b.time)
 	}
 
 
@@ -90,7 +99,7 @@ export default class BudgetSimulator {
 
 		for (let i = 1; i < transformDates.length; i++) {
 			const budgetStart = transformDates[i - 1]
-			const budgetEnd = (i == transformDates.length - 1) ? transformDates[i] : transformDates[i].copy().shift(-1)
+			const budgetEnd = (i == transformDates.length - 1) ? transformDates[i] : transformDates[i].duplicate().shift(-1)
 
 			const budget = new Budget(budgetStart, budgetEnd)
 
@@ -99,27 +108,11 @@ export default class BudgetSimulator {
 			}
 
 			for (const opParams of this.#config.bills) {
-				
-
-
-				/*
-				* WARNING: EXPERIMENTAL !!!
-				*/
-
-				// Incorporate sub-budgets
-				if (opParams.source) {
-					const bs = await BudgetSimulator.fromFile(opParams.source)
-					const r = await bs.simulate()
-					opParams.amount = r[0].bills.totals[opParams.recurrence || "monthly"]
-				}
-
-
-
 				// Skip bill if it's out of budget's schedule...
 				if (
-					(opParams.startDate && new SimDate(...opParams.startDate) > budgetStart)
+					(opParams.schedule.startDate && new SimDate(...opParams.schedule.startDate) > budgetStart)
 					||
-					(opParams.endDate && new SimDate(...opParams.endDate) < budgetEnd)
+					(opParams.schedule.endDate && new SimDate(...opParams.schedule.endDate) < budgetEnd)
 				) continue
 
 				// ... or else add bill to budget
@@ -138,13 +131,13 @@ export default class BudgetSimulator {
 	public async simulate(printer: printer_t | null = null): Promise<Budget[]> {
 		const budgets = await this.#createBudgets()
 		for (const budget of budgets) {
-			if (printer) this.#printBudget(budget, printer)
+			if (printer) HTMLRenderer.printBudget(budget, printer)
 			this.#run(budget)
 			this.#account.charge(budget.startDate, budget.endDate)
 		}
 
 		if (printer) {
-			this.#printTransactions(printer)
+			HTMLRenderer.printTransactions(this.#account, printer)
 
 			const lowest = this.#account.getLowestBalance()
 			console.log(lowest.date.toString(), lowest.balance)
@@ -154,10 +147,13 @@ export default class BudgetSimulator {
 	}
 
 
+	/**
+	 * This is the actual simulation loop.
+	 */
 	#run(budget: Budget): void {
 		const simDate = budget.startDate
 			// Copy start date because we don't want to modify the original
-			.copy()
+			.duplicate()
 			// Go back seven days to make sure previously postponed transactions are not skipped
 			.shift(-7)
 
@@ -165,135 +161,16 @@ export default class BudgetSimulator {
 		while (simDate <= budget.endDate) {
 			// Apply payments
 			budget.payments.forEach(payment => {
-				if (payment.recurrence == "monthly" && payment.day == simDate.day) {
-					this.#account.createTransaction(payment, simDate.copy())
-				}
-				else if (payment.startDate && payment.startDate.getWeekDay(payment.recurrence === "biWeekly") === simDate.getWeekDay(payment.recurrence === "biWeekly")) {
-					this.#account.createTransaction(payment, simDate.copy())
-				}
+				if (payment.schedule.matches(simDate)) this.#account.addTransaction(payment, simDate.duplicate())
 			})
 
 			// Apply bills
 			budget.bills.forEach(bill => {
-				if (bill.recurrence == "monthly") {
-					const billDay = (bill.day == -1) ? simDate.lastDayOfMonth : bill.day
-
-					if (simDate.day == billDay) {
-						this.#account.createTransaction(bill, simDate.copy())
-					}
-				}
-				else if (bill.recurrence == "yearly") {
-					if (bill.day == simDate.day && bill.month == simDate.month) {
-						this.#account.createTransaction(bill, simDate.copy())
-					}
-				}
-				else if (bill.startDate && bill.startDate.getWeekDay(bill.recurrence === "biWeekly") === simDate.getWeekDay(bill.recurrence === "biWeekly")) {
-					this.#account.createTransaction(bill, simDate.copy())
-				}
+				if (bill.schedule.matches(simDate)) this.#account.addTransaction(bill, simDate.duplicate())
 			})
 
 			simDate.shift(1)
 		}
-	}
-
-
-	/**
-	 * Generates an HTML string containing calculator results in the form of an HTML table.
-	 * @param printer A function which receives the generated HTML string
-	 */
-	#printBudget(budget: Budget, printer: printer_t) {
-		// Inner formatting function
-		const f = (a: number, c: boolean = false) => {
-			if (c) a = (Math.ceil(a * 100) / 100)
-			return a.toFixed(2)
-		}
-
-		let content = `
-			<table style="margin:10px" border="1" cellspacing="0">
-				<tr>
-					<th width="100">${budget.startDate}</th>
-					<th width="120">Journalier</th>
-					<th width="120">Hebdomadaire</th>
-					<th width="120">Bi-hebdomadaire</th>
-					<th width="120">Mensuel</th>
-					<th width="120">Annuel</th>
-				</tr>
-		`
-
-		budget.bills.toSorted((a, b) => b.daily - a.daily).forEach(bill => {
-			content += `
-					<tr>
-						<th>${bill.name}</th>
-						<td>${f(bill.daily)} $</td>
-						<td>${f(bill.weekly)} $</td>
-						<td>${f(bill.biWeekly)} $</td>
-						<td>${f(bill.monthly)} $</td>
-						<td>${f(bill.yearly)} $</td>
-					</tr>
-				`
-		})
-
-		content += `
-				<tr>
-					<td colspan="6"></td>
-				</tr>
-				<tr>
-					<th>Totaux</th>
-					<td>${f(budget.bills.totals.daily)} $</td>
-					<td>${f(budget.bills.totals.weekly, true)} $</td>
-					<td>${f(budget.bills.totals.biWeekly)} $</td>
-					<td>${f(budget.bills.totals.monthly)} $</td>
-					<td>${f(budget.bills.totals.yearly)} $</td>
-				</tr>
-			</table>
-		`
-
-		printer(content.replace(/[\t\n\r]+/g, ''))
-	}
-
-
-	/**
-	 * Generates an HTML string representing the transactions.
-	 * @param printer A function which receives the generated HTML string
-	 */
-	#printTransactions(printer: printer_t) {
-		let currentMonth = -1
-		let month: number
-		let content: string = ""
-
-		this.#account.getTransactions().forEach(t => {
-			// Skip not charged transactions
-			if (!t.isCharged) return
-
-			month = t.date.month
-
-			// Show month header on each new month
-			if (month != currentMonth) {
-				if (currentMonth !== -1) {
-					content += "</table>"
-				}
-				currentMonth = month
-				content += `
-					<table style="display:inline-flex; margin:10px" border="1" cellspacing="0" cellpadding="2">
-						<tr>
-							<th colspan="4">${t.date.monthName + " " + t.date.year}</th>
-						</tr>
-					`
-			}
-
-			content += `
-				<tr bgcolor="${t.balance < 0 ? '#F66' : 'lightgreen'}">
-					<td width="20" style="text-align:center">${t.date.day}</td>
-					<td width="100" style="text-align:left">${t.operation.name}</td>
-					<td width="75">${t.operation.type == "Bill" ? '-' : ''}${t.operation.amount.toFixed(2)} $</td>
-					<td width="75">${t.balance.toFixed(2)} $</td>
-				</tr>
-			`
-		})
-
-		content += `</table>`
-
-		printer(content.replace(/[\t\n\r]+/g, ''))
 	}
 
 }
