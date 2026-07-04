@@ -1,4 +1,4 @@
-import Operation from "./Operation.js"
+import Operation from "./operation/Operation.js"
 import SimDate from "./SimDate.js"
 import Transaction from "./Transaction.js"
 
@@ -8,40 +8,34 @@ export default class Account {
 	#balance: number
 	#transactions: Transaction[]
 
-
 	public constructor(initialBalance: number = 0) {
 		this.#balance = initialBalance
 		this.#transactions = []
 	}
 
-
 	public setBalance(balance: number) {
 		this.#balance = balance
 	}
-
 
 	public getBalance() {
 		return this.#balance
 	}
 
-
 	public getTransactions() {
 		return this.#transactions
 	}
 
-
 	public addTransaction(operation: Operation, date: SimDate): Transaction {
 		// Postpone to next business day if required...
-		if (operation.skipWeekend) date.toNextBusinessDay()
+		if (operation.schedule.skipWeekend) date.toNextBusinessDay()
 
 		// ... and THEN add delay if specified
-		date.shift(operation.delay)
+		date.shift(operation.schedule.processingDelay)
 
 		const transaction = new Transaction(operation, date)
 		this.#transactions.push(transaction)
 		return transaction
 	}
-
 
 	/**
 	 * Charges all transaction in the account, sorted by date
@@ -62,20 +56,15 @@ export default class Account {
 				// Skip if transaction is not on schedule
 				if (t.date < from || t.date > until) return
 
-				switch (t.operation.type) {
-					case "Payment":
-						this.#balance += t.operation.amount; break
-					case "Bill":
-						this.#balance -= t.operation.amount; break
-					default:
-						return
-				}
+				if (t.operation.isBill())
+					this.#balance -= t.operation.amount
+				else
+					this.#balance += t.operation.amount
 
 				t.balance = Math.round(this.#balance * 100) / 100
 				t.isCharged = true
 			})
 	}
-
 
 	public getLowestBalance(): Transaction {
 		let result: Transaction = {} as Transaction

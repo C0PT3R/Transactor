@@ -1,4 +1,4 @@
-import Operation from "./Operation.js"
+import Operation from "./operation/Operation.js"
 import SimDate from "./SimDate.js"
 
 
@@ -9,7 +9,6 @@ export default class Transaction {
 	/** The balance in the account after the transaction is charged */ 
 	public balance: number
 	public isCharged: boolean
-
 
 	public constructor(operation: Operation, date: SimDate) {
 		this.operation = operation
