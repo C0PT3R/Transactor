@@ -1,5 +1,5 @@
 import ScheduleData from "../types/ScheduleTypes.js"
-import SimDate from "../SimDate.js"
+import LocalDate from "../LocalDate.js"
 import Schedule from "./Schedule.js"
 
 
@@ -18,7 +18,7 @@ export default class YearlySchedule extends Schedule {
         this.#month = data.month
     }
 
-    matches(date: SimDate): boolean {
+    matches(date: LocalDate): boolean {
         if (!this.isActive(date)) return false
         
         return (date.getMonth() === this.#month && date.getDay() === this.#day)

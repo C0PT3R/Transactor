@@ -1,4 +1,4 @@
-import SimDate from "./SimDate.js"
+import LocalDate from "./LocalDate.js"
 import Transaction from "./Transaction.js"
 
 
@@ -39,7 +39,7 @@ export default class Account {
 		})
 	}
 
-	public charge(from: SimDate, until: SimDate) {
+	public charge(from: LocalDate, until: LocalDate) {
 		this.sortTransactions([...this.#transactions]).forEach(t => {
 			if (t.isCharged) return
 

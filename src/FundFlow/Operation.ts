@@ -3,7 +3,7 @@ import Schedule from "./schedules/Schedule.js"
 import ScheduleFactory from "./schedules/ScheduleFactory.js"
 import { applyBusinessDayPolicy, BusinessDayPolicy } from "./calendar/BusinessDayPolicy.js";
 import { BusinessCalendar } from "./calendar/BusinessCalendar.js";
-import SimDate from "./SimDate.js";
+import LocalDate from "./LocalDate.js";
 
 export type OperationType = "payment" | "bill"
 
@@ -38,7 +38,7 @@ export default class Operation {
 		//if (undefined !== params.recurrence) this.#recurrence = params.recurrence 
 	}
 
-	public resolveTransactionDate(scheduledDate: SimDate, calendar: BusinessCalendar): SimDate {
+	public resolveTransactionDate(scheduledDate: LocalDate, calendar: BusinessCalendar): LocalDate {
 		const adjustedDate = applyBusinessDayPolicy(
 			scheduledDate,
 			this.schedule.businessDayPolicy,

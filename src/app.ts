@@ -8,5 +8,5 @@ Flow.Renderer.render(result, (content: string) => {
 })
 
 if (result.lowestBalance) {
-	console.log(result.lowestBalance.chargeDate.toString(), result.lowestBalance.balance)
+	console.log(result.lowestBalance.chargeDate.toISO(), result.lowestBalance.balance)
 }

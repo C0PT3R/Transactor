@@ -1,6 +1,6 @@
 import Operation, { OperationType } from "./Operation.js"
 import OperationData from "./types/OperationTypes.js"
-import SimDate from "./SimDate.js"
+import LocalDate from "./LocalDate.js"
 import Totals from "./Totals.js"
 
 
@@ -9,10 +9,10 @@ export default class Frame {
 	public operations: Operation[]
 	public paymentsTotals: Totals
 	public billsTotals: Totals
-	public startDate: SimDate
-	public endDate: SimDate
+	public startDate: LocalDate
+	public endDate: LocalDate
 
-	constructor(startDate: SimDate, endDate: SimDate) {
+	constructor(startDate: LocalDate, endDate: LocalDate) {
 		this.operations = []
 		this.paymentsTotals = new Totals()
 		this.billsTotals = new Totals()
@@ -24,7 +24,7 @@ export default class Frame {
 		if (!transforms) return
 
 		for (const tf of transforms) {
-			const tfDate = new SimDate(...tf.date)
+			const tfDate = new LocalDate(...tf.date)
 			
 			if (tfDate >= this.startDate && tfDate <= this.endDate) {
 				operation.transform(tf.params)

@@ -1,7 +1,12 @@
 import Result from "./Result.js"
 import Frame from "./Frame.js"
 import Transaction from "./Transaction.js"
+import LocalDate from "./LocalDate.js"
 
+const monthNames = [
+	"Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+	"Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+]
 
 export default class Renderer {
 
@@ -12,6 +17,10 @@ export default class Renderer {
 			this.renderFrameDetails(frame, printer)
 		}
 		this.renderTransactions(result.transactions, printer)
+	}
+
+	public static renderDateString(date: LocalDate): string {
+		return `${date.getDay()} ${monthNames[date.getMonth() - 1]} ${date.getYear()}`
 	}
 
 	/**
@@ -28,7 +37,7 @@ export default class Renderer {
 		let content = `
 			<table style="margin:10px" border="1" cellspacing="0">
 				<tr>
-					<th width="100">${frame.startDate}</th>
+					<th width="100">${this.renderDateString(frame.startDate)}</th>
 					<th width="120">Journalier</th>
 					<th width="120">Hebdomadaire</th>
 					<th width="120">Bi-hebdomadaire</th>
@@ -94,7 +103,7 @@ export default class Renderer {
 				content += `
 					<table style="display:inline-flex; margin:10px" border="1" cellspacing="0" cellpadding="2">
 						<tr>
-							<th colspan="4">${t.chargeDate.getMonthName() + " " + t.chargeDate.getYear()}</th>
+							<th colspan="4">${monthNames[t.chargeDate.getMonth() - 1] + " " + t.chargeDate.getYear()}</th>
 						</tr>
 					`
 			}

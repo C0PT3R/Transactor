@@ -1,10 +1,10 @@
 import { BusinessCalendar } from "./BusinessCalendar.js"
-import SimDate from "../SimDate.js"
+import LocalDate from "../LocalDate.js"
 
 
 export class CanadaBusinessCalendar extends BusinessCalendar {
 
-    protected isHoliday(date: SimDate): boolean {
+    protected isHoliday(date: LocalDate): boolean {
         const y = date.getYear()
         const m = date.getMonth()
         const d = date.getDay()
@@ -40,7 +40,7 @@ export class CanadaBusinessCalendar extends BusinessCalendar {
         return false
     }
 
-    private isFirstMondayOfSeptember(date: SimDate): boolean {
+    private isFirstMondayOfSeptember(date: LocalDate): boolean {
         return (
             date.getMonth() === 9 &&
             date.getWeekDay() === 1 &&
@@ -48,7 +48,7 @@ export class CanadaBusinessCalendar extends BusinessCalendar {
         )
     }
 
-    private isSecondMondayOfOctober(date: SimDate): boolean {
+    private isSecondMondayOfOctober(date: LocalDate): boolean {
         return (
             date.getMonth() === 10 &&
             date.getWeekDay() === 1 &&
@@ -57,7 +57,7 @@ export class CanadaBusinessCalendar extends BusinessCalendar {
         )
     }
 
-    private isGoodFriday(date: SimDate): boolean {
+    private isGoodFriday(date: LocalDate): boolean {
         const easter = this.calculateEaster(date.getYear())
         easter.addDays(-2)
         return easter == date
@@ -66,7 +66,7 @@ export class CanadaBusinessCalendar extends BusinessCalendar {
     /**
      * Meeus/Jones/Butcher algorithm
      */
-    private calculateEaster(year: number): SimDate {
+    private calculateEaster(year: number): LocalDate {
         const a = year % 19
         const b = Math.floor(year / 100)
         const c = year % 100
@@ -83,7 +83,7 @@ export class CanadaBusinessCalendar extends BusinessCalendar {
         const month = Math.floor((h + l - 7 * m + 114) / 31)
         const day = ((h + l - 7 * m + 114) % 31) + 1
 
-        return new SimDate(year, month, day)
+        return new LocalDate(year, month, day)
     }
     
 }

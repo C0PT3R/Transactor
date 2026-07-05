@@ -1,5 +1,5 @@
 import ScheduleData from "../types/ScheduleTypes.js";
-import SimDate from "../SimDate.js";
+import LocalDate from "../LocalDate.js";
 import Schedule from "./Schedule.js"
 
 
@@ -16,7 +16,7 @@ export default class WeeklySchedule extends Schedule {
         this.#day = data.day
     }
 
-    public matches(date: SimDate): boolean {
+    public matches(date: LocalDate): boolean {
         if (!this.isActive(date)) return false
         
         return date.getWeekDay() === this.#day
