@@ -1,5 +1,12 @@
 {
+  "scripts": {
+    "build": "esbuild src/app.ts --bundle --format=esm --target=es2022 --outfile=dist/app.js --sourcemap",
+    "watch": "esbuild src/app.ts --bundle --format=esm --target=es2022 --outfile=dist/app.js --sourcemap --watch"
+  },
   "devDependencies": {
     "esbuild": "^0.28.1"
+  },
+  "dependencies": {
+    "lit": "^3.3.3"
   }
 }

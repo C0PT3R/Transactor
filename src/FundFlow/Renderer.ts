@@ -1,3 +1,7 @@
+import { LitElement, css, html, nothing } from "lit"
+import { customElement, property, state } from "lit/decorators.js"
+import { render as litRender } from "lit"
+
 import Result from "./Result.js"
 import Frame from "./Frame.js"
 import Transaction from "./Transaction.js"
@@ -8,119 +12,329 @@ const monthNames = [
 	"Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
 ]
 
-export default class Renderer {
+type HtmlTarget = HTMLElement | DocumentFragment
 
-    constructor() {}
+type FrameOperationView = {
+	name: string
+	type: string
+	daily: number
+	weekly: number
+	biWeekly: number
+	monthly: number
+	yearly: number
+}
 
-	public static render(result: Result, printer: printer_t) {
-		for (const frame of result.frames) {
-			this.renderFrameDetails(frame, printer)
+function monthName(date: LocalDate): string {
+	return monthNames[date.getMonth() - 1]
+}
+
+function dateString(date: LocalDate): string {
+	return `${date.getDay()} ${monthName(date)} ${date.getYear()}`
+}
+
+function monthTitle(date: LocalDate): string {
+	return `${monthName(date)} ${date.getYear()}`
+}
+
+function monthKey(date: LocalDate): string {
+	return `${date.getYear()}-${date.getMonth()}`
+}
+
+function money(amount: number, roundUp: boolean = false): string {
+	const value = roundUp ? Math.ceil(amount * 100) / 100 : amount
+	return `${value.toFixed(2)} $`
+}
+
+function billOperations(frame: Frame): FrameOperationView[] {
+	return frame.operations
+		.toSorted((a, b) => b.daily - a.daily)
+		.filter(operation => operation.type === "bill")
+}
+
+function chargedTransactionsByMonth(transactions: Transaction[]): Map<string, Transaction[]> {
+	const months = new Map<string, Transaction[]>()
+
+	for (const transaction of transactions) {
+		if (!transaction.isCharged) continue
+
+		const key = monthKey(transaction.chargeDate)
+		const monthTransactions = months.get(key) ?? []
+
+		monthTransactions.push(transaction)
+		months.set(key, monthTransactions)
+	}
+
+	return months
+}
+
+@customElement("budget-report")
+export class BudgetReport extends LitElement {
+	@property({ attribute: false })
+	public result?: Result
+
+	public static styles = css`
+		:host {
+			display: block;
+			font-family: system-ui, sans-serif;
 		}
-		this.renderTransactions(result.transactions, printer)
+
+		.report-section {
+			display: block;
+			margin-bottom: 16px;
+		}
+	`
+
+	protected render() {
+		if (!this.result) return nothing
+
+		return html`
+			<section class="report-section">
+				${this.result.frames.map(frame => html`
+					<frame-details .frame=${frame}></frame-details>
+				`)}
+			</section>
+
+			<section class="report-section">
+				<transaction-ledger .transactions=${this.result.transactions}></transaction-ledger>
+			</section>
+		`
+	}
+}
+
+@customElement("frame-details")
+export class FrameDetails extends LitElement {
+	@property({ attribute: false })
+	public frame?: Frame
+
+	@state()
+	private collapsed = false
+
+	public static styles = css`
+		:host {
+			display: block;
+			margin: 10px;
+		}
+
+		details {
+			display: inline-block;
+		}
+
+		summary {
+			cursor: pointer;
+			font-weight: 700;
+			margin-bottom: 4px;
+		}
+
+		table {
+			border-collapse: collapse;
+			background-color: #DDD;
+		}
+
+		th, td {
+			border: 1px solid black;
+			padding: 2px 4px;
+			white-space: nowrap;
+		}
+
+		td {
+			text-align: right;
+		}
+
+		.date-column {
+			width: 100px;
+		}
+
+		.amount-column {
+			width: 120px;
+			text-align: right;
+		}
+
+		.spacer td {
+			border-left: 1px solid black;
+			border-right: 1px solid black;
+			height: 1em;
+		}
+	`
+
+	protected render() {
+		if (!this.frame) return nothing
+
+		return html`
+			<details open @toggle=${this.onToggle}>
+				<summary>${dateString(this.frame.startDate)}</summary>
+				${this.collapsed ? nothing : this.renderTable(this.frame)}
+			</details>
+		`
+	}
+
+	private onToggle(event: Event) {
+		this.collapsed = !(event.currentTarget as HTMLDetailsElement).open
+	}
+
+	private renderTable(frame: Frame) {
+		return html`
+			<table>
+				<thead>
+					<tr>
+						<th class="date-column">${dateString(frame.startDate)}</th>
+						<th class="amount-column">Journalier</th>
+						<th class="amount-column">Hebdomadaire</th>
+						<th class="amount-column">Bi-hebdomadaire</th>
+						<th class="amount-column">Mensuel</th>
+						<th class="amount-column">Annuel</th>
+					</tr>
+				</thead>
+				<tbody>
+					${billOperations(frame).map(operation => this.renderOperationRow(operation))}
+					<tr class="spacer"><td colspan="6"></td></tr>
+					${this.renderTotalsRow(frame)}
+				</tbody>
+			</table>
+		`
+	}
+
+	private renderOperationRow(operation: FrameOperationView) {
+		return html`
+			<tr>
+				<th>${operation.name}</th>
+				<td>${money(operation.daily)}</td>
+				<td>${money(operation.weekly)}</td>
+				<td>${money(operation.biWeekly)}</td>
+				<td>${money(operation.monthly)}</td>
+				<td>${money(operation.yearly)}</td>
+			</tr>
+		`
+	}
+
+	private renderTotalsRow(frame: Frame) {
+		return html`
+			<tr>
+				<th>Totaux</th>
+				<td>${money(frame.billsTotals.daily)}</td>
+				<td>${money(frame.billsTotals.weekly, true)}</td>
+				<td>${money(frame.billsTotals.biWeekly)}</td>
+				<td>${money(frame.billsTotals.monthly)}</td>
+				<td>${money(frame.billsTotals.yearly)}</td>
+			</tr>
+		`
+	}
+}
+
+@customElement("transaction-ledger")
+export class TransactionLedger extends LitElement {
+	@property({ attribute: false })
+	public transactions: Transaction[] = []
+
+	public static styles = css`
+		:host {
+			display: block;
+		}
+
+		.month-table {
+			display: inline-table;
+			background-color: #DDD;
+			border-collapse: collapse;
+			margin: 10px;
+			vertical-align: top;
+		}
+
+		th, td {
+			border: 1px solid black;
+			padding: 2px;
+			white-space: nowrap;
+		}
+
+		.day-column {
+			width: 20px;
+			text-align: center;
+		}
+
+		.name-column {
+			width: 100px;
+			text-align: left;
+		}
+
+		.amount-column {
+			width: 75px;
+			text-align: right;
+		}
+
+		.positive {
+			background: lightgreen;
+		}
+
+		.negative {
+			background: #F66;
+		}
+	`
+
+	protected render() {
+		const months = chargedTransactionsByMonth(this.transactions)
+
+		return html`
+			${Array.from(months.values()).map(transactions => this.renderMonthTable(transactions))}
+		`
+	}
+
+	private renderMonthTable(transactions: Transaction[]) {
+		const first = transactions[0]
+		if (!first) return nothing
+
+		return html`
+			<table class="month-table">
+				<thead>
+					<tr>
+						<th colspan="4">${monthTitle(first.chargeDate)}</th>
+					</tr>
+				</thead>
+				<tbody>
+					${transactions.map(transaction => this.renderTransactionRow(transaction))}
+				</tbody>
+			</table>
+		`
+	}
+
+	private renderTransactionRow(transaction: Transaction) {
+		return html`
+			<tr class=${transaction.balance < 0 ? "negative" : "positive"}>
+				<td class="day-column">${transaction.chargeDate.getDay()}</td>
+				<td class="name-column">${transaction.operation.name}</td>
+				<td class="amount-column">${this.renderOperationAmount(transaction)}</td>
+				<td class="amount-column">${money(transaction.balance)}</td>
+			</tr>
+		`
+	}
+
+	private renderOperationAmount(transaction: Transaction): string {
+		const sign = transaction.operation.isBill() ? "-" : ""
+		return `${sign}${money(transaction.operation.amount)}`
+	}
+}
+
+export default class Renderer {
+	constructor() {}
+
+	/**
+	 * New preferred API: render directly into a DOM element with Lit.
+	 */
+	public static renderInto(result: Result, target: HtmlTarget) {
+		litRender(html`<budget-report .result=${result}></budget-report>`, target)
+	}
+
+	/**
+	 * Kept for existing code that still calls Renderer.render(result, writer).
+	 * Lit needs a DOM target, so this wrapper creates a temporary element and sends
+	 * its HTML to the old writer callback after Lit has rendered.
+	 *
+	 * Prefer renderInto(...) for new UI code.
+	 */
+	public static render(result: Result, writer: printer_t) {
+		const container = document.createElement("div")
+		this.renderInto(result, container)
+		writer(container.innerHTML)
 	}
 
 	public static renderDateString(date: LocalDate): string {
-		return `${date.getDay()} ${monthNames[date.getMonth() - 1]} ${date.getYear()}`
+		return dateString(date)
 	}
-
-	/**
-	 * Generates an HTML string containing calculator results in the form of an HTML table.
-	 * @param printer A function which receives the generated HTML string
-	 */
-	public static renderFrameDetails(frame: Frame, printer: printer_t) {
-		// Inner formatting function
-		const f = (a: number, c: boolean = false) => {
-			if (c) a = (Math.ceil(a * 100) / 100)
-			return a.toFixed(2)
-		}
-
-		let content = `
-			<table style="margin:10px" border="1" cellspacing="0">
-				<tr>
-					<th width="100">${this.renderDateString(frame.startDate)}</th>
-					<th width="120">Journalier</th>
-					<th width="120">Hebdomadaire</th>
-					<th width="120">Bi-hebdomadaire</th>
-					<th width="120">Mensuel</th>
-					<th width="120">Annuel</th>
-				</tr>
-		`
-
-		frame.operations.toSorted((a, b) => b.daily - a.daily).forEach(bill => {
-			if (bill.type !== "bill") return
-
-			content += `
-					<tr>
-						<th>${bill.name}</th>
-						<td>${f(bill.daily)} $</td>
-						<td>${f(bill.weekly)} $</td>
-						<td>${f(bill.biWeekly)} $</td>
-						<td>${f(bill.monthly)} $</td>
-						<td>${f(bill.yearly)} $</td>
-					</tr>
-				`
-		})
-
-		content += `
-				<tr>
-					<td colspan="6"></td>
-				</tr>
-				<tr>
-					<th>Totaux</th>
-					<td>${f(frame.billsTotals.daily)} $</td>
-					<td>${f(frame.billsTotals.weekly, true)} $</td>
-					<td>${f(frame.billsTotals.biWeekly)} $</td>
-					<td>${f(frame.billsTotals.monthly)} $</td>
-					<td>${f(frame.billsTotals.yearly)} $</td>
-				</tr>
-			</table>
-		`
-
-		printer(content.replace(/[\t\n\r]+/g, ''))
-	}
-
-	/**
-	 * Generates an HTML string representing the transactions.
-	 * @param printer A function which receives the generated HTML string
-	 */
-	public static renderTransactions(transactions: Transaction[], printer: printer_t) {
-		let currentMonth = -1
-		let month: number
-		let content: string = ""
-
-		transactions.forEach(t => {
-			// Skip not charged transactions
-			if (!t.isCharged) return
-
-			month = t.chargeDate.getMonth()
-
-			// Show month header on each new month
-			if (month != currentMonth) {
-				if (currentMonth !== -1) {
-					content += "</table>"
-				}
-				currentMonth = month
-				content += `
-					<table style="display:inline-flex; margin:10px" border="1" cellspacing="0" cellpadding="2">
-						<tr>
-							<th colspan="4">${monthNames[t.chargeDate.getMonth() - 1] + " " + t.chargeDate.getYear()}</th>
-						</tr>
-					`
-			}
-
-			content += `
-				<tr bgcolor="${t.balance < 0 ? '#F66' : 'lightgreen'}">
-					<td width="20" style="text-align:center">${t.chargeDate.getDay()}</td>
-					<td width="100" style="text-align:left">${t.operation.name}</td>
-					<td width="75">${t.operation.isBill() ? '-' : ''}${t.operation.amount.toFixed(2)} $</td>
-					<td width="75">${t.balance.toFixed(2)} $</td>
-				</tr>
-			`
-		})
-
-		content += `</table>`
-
-		printer(content.replace(/[\t\n\r]+/g, ''))
-	}
-
 }

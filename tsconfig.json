@@ -1,11 +1,13 @@
 {
-	"compilerOptions": {
-		"target": "es2022",
-		"module": "es2022",
-		"sourceMap": true,
-		"lib": ["ESNext", "ESNext.Array", "dom", "es2015", "es5", "es6"],
-		"noImplicitOverride": true,
-		"rootDir": "./src/",
-		"outDir": "./dist/"
-	}
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "target": "ES2020",
+    "experimentalDecorators": true,
+    "useDefineForClassFields": false,
+	"sourceMap": true,
+	"rootDir": "./src/",
+	"outDir": "./dist/",
+	"lib": ["DOM", "ES2023"]
+  }
 }
