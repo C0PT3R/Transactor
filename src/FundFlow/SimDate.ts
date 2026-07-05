@@ -11,7 +11,6 @@ export default class SimDate {
 	// Epoch of the first UNIX Sunday
 	static readonly #fUS = new SimDate(1970, 1, 4).#date.getTime()
 
-
 	/**
 	 * Creates a SimDate representing today's date
 	 */
@@ -46,7 +45,6 @@ export default class SimDate {
 		}
 	}
 
-
 	/**
 	 * Sets the time of the SimDate
 	 * @param time The number of elapsed days since the first UNIX Sunday.
@@ -58,7 +56,6 @@ export default class SimDate {
 		return this
 	}
 
-
 	/**
 	 * Sets the day of month
 	 * @returns Self.
@@ -67,7 +64,6 @@ export default class SimDate {
 		this.#date.setDate(day)
 		return this
 	}
-
 
 	/**
 	 * Sets the month
@@ -78,7 +74,6 @@ export default class SimDate {
 		return this
 	}
 
-
 	/**
 	 * Sets the year
 	 * @returns Self.
@@ -87,7 +82,6 @@ export default class SimDate {
 		this.#date.setFullYear(year)
 		return this
 	}
-
 
 	/**
 	 * Sets the complete date
@@ -98,113 +92,83 @@ export default class SimDate {
 		return this
 	}
 
-
 	/**
 	 * Gets the day of week, from 0 and 6 (or 0 to 13 if bi-weekly), starting from Sunday
 	 * @param biWeekly (optional) If true, uses a bi-weekly period. Defaults to false.
 	 * @returns The day of the week
 	 */
 	public getWeekDay(biWeekly: boolean = false): number {
-		return biWeekly ? this.time % 14 : this.time % 7
+		return biWeekly ? this.getTime() % 14 : this.getTime() % 7
 	}
-
 
 	/**
 	 * Creates a copy of the SimDate. Useful if you want to modify a date without affecting the original one.
 	 * @returns A copy of self
 	 */
-	public duplicate(): SimDate {
-		return new SimDate(this.time)
+	public clone(): SimDate {
+		return new SimDate(this.getTime())
 	}
-
-
-	/**
-	 * Checks if the SimDate is on week end.
-	 * @returns true or false, depending on the SimDate
-	 */
-	public isWeekend(): boolean {
-		return -1 != [0, 6].indexOf(this.getWeekDay())
-	}
-
 
 	/**
 	 * Move date of numDays
 	 * @param numDays Number of days (can be positive or negative)
 	 * @returns Self
 	 */
-	public shift(numDays: number): this {
+	public addDays(numDays: number): this {
 		this.#date.setDate(this.#date.getDate() + numDays)
 		return this
 	}
 
-
-	/**
-	 * Postpones a SimDate to the next business day. If the SimDate is on a business day, it doesn't change.
-	 * @returns Self.
-	 */
-	public toNextBusinessDay(): this {
-		if (this.getWeekDay() == 0) this.shift(1)
-		else if (this.getWeekDay() == 6) this.shift(2)
-		return this
-	}
-
-
 	/**
 	 * The number of elapsed days since the first UNIX Sunday
 	 */
-	public get time(): number {
+	public getTime(): number {
 		// Result is rounded to compensate for DST
 		return Math.round((this.#date.getTime() - SimDate.#fUS) / 864e5)
 	}
 
-
 	/**
 	 * The day of month
 	 */
-	public get day(): number {
+	public getDay(): number {
 		return this.#date.getDate()
 	}
-
 
 	/**
 	 * The month
 	 */
-	public get month(): number {
+	public getMonth(): number {
 		return this.#date.getMonth() + 1
 	}
-
 
 	/**
 	 * The month's name (in french)
 	 */
-	public get monthName() {
+	public getMonthName() {
 		return monthNames[this.#date.getMonth()]
 	}
-
 
 	/**
 	 * The year
 	 */
-	public get year(): number {
+	public getYear(): number {
 		return this.#date.getFullYear()
 	}
 
 	/**
 	 * The last day of the month
 	 */
-	public get lastDayOfMonth(): number {
-		const d = new Date(this.year, this.month, 0)
+	public getLastDayOfMonth(): number {
+		const d = new Date(this.getYear(), this.getMonth(), 0)
 		return d.getDate()
 	}
 
-
 	public valueOf(): number {
-		return this.time
+		return this.getTime()
 	}
 
-
 	public toString(): string {
-		return this.day + " " + monthNames[this.month - 1] + " " + this.year
+		return this.getDay() + " " + monthNames[this.getMonth() - 1] + " " + this.getYear()
 	}
 
 }

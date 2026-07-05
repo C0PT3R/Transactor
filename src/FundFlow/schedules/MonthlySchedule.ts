@@ -1,26 +1,26 @@
+import ScheduleData from "../types/ScheduleTypes.js";
 import SimDate from "../SimDate.js";
 import Schedule from "./Schedule.js"
-import { ScheduleParams } from "./scheduleRegistry.js";
 
 
 export default class MonthlySchedule extends Schedule {
 
     #day: number
 
-    constructor(scheduleParams: ScheduleParams) {
-        super(scheduleParams)
+    constructor(data: ScheduleData) {
+        super(data)
 
-        if (scheduleParams.day === undefined)
+        if (data.day === undefined)
             throw new Error('Parameter "day" must be defined for monthly schedule')
         
-        this.#day = scheduleParams.day
+        this.#day = data.day
     }
     
     public matches(date: SimDate): boolean {
         if (!this.isActive(date)) return false
 
-        const targetDay = (this.#day === -1) ? date.lastDayOfMonth : this.#day
-        return date.day === targetDay
+        const targetDay = (this.#day === -1) ? date.getLastDayOfMonth() : this.#day
+        return date.getDay() === targetDay
     }
 
 }

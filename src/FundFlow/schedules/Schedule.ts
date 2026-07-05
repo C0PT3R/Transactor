@@ -1,5 +1,7 @@
+import ScheduleData from "../types/ScheduleTypes.js"
 import SimDate from "../SimDate.js"
-import { ScheduleParams, ScheduleType } from "./scheduleRegistry.js"
+import { ScheduleType } from "./scheduleRegistry.js"
+import { BusinessDayPolicy } from "../calendar/BusinessDayPolicy.js"
 
 
 export default abstract class Schedule {
@@ -8,14 +10,14 @@ export default abstract class Schedule {
     public startDate: SimDate | undefined
     public endDate: SimDate | undefined
     public processingDelay: number
-    public skipWeekend: boolean
+    public businessDayPolicy: BusinessDayPolicy
 
-    public constructor(scheduleParams: ScheduleParams) {
-        this.type = scheduleParams.type
-        this.startDate = scheduleParams.startDate ? new SimDate(...scheduleParams.startDate) : undefined
-        this.endDate = scheduleParams.endDate ? new SimDate(...scheduleParams.endDate) : undefined
-		this.processingDelay = scheduleParams.processingDelay ?? 0
-		this.skipWeekend = scheduleParams.skipWeekend ?? true
+    public constructor(data: ScheduleData) {
+        this.type = data.type
+        this.startDate = data.startDate ? new SimDate(...data.startDate) : undefined
+        this.endDate = data.endDate ? new SimDate(...data.endDate) : undefined
+		this.processingDelay = data.processingDelay ?? 0
+        this.businessDayPolicy = data.businessDayPolicy ?? "none"
     }
 
     public abstract matches(date: SimDate): boolean

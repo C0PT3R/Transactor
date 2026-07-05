@@ -1,24 +1,24 @@
-import FlowResult from "./FlowResult"
-import FlowWindow from "./FlowWindow"
-import Transaction from "./Transaction"
+import Result from "./Result.js"
+import Frame from "./Frame.js"
+import Transaction from "./Transaction.js"
 
 
-export default class HTMLRenderer {
+export default class Renderer {
 
     constructor() {}
 
-	public static render(result: FlowResult, printer: printer_t) {
-		for (const window of result.windows) {
-			this.printWindow(window, printer)
+	public static render(result: Result, printer: printer_t) {
+		for (const frame of result.frames) {
+			this.renderFrameDetails(frame, printer)
 		}
-		this.printTransactions(result.transactions, printer)
+		this.renderTransactions(result.transactions, printer)
 	}
 
 	/**
 	 * Generates an HTML string containing calculator results in the form of an HTML table.
 	 * @param printer A function which receives the generated HTML string
 	 */
-	public static printWindow(window: FlowWindow, printer: printer_t) {
+	public static renderFrameDetails(frame: Frame, printer: printer_t) {
 		// Inner formatting function
 		const f = (a: number, c: boolean = false) => {
 			if (c) a = (Math.ceil(a * 100) / 100)
@@ -28,7 +28,7 @@ export default class HTMLRenderer {
 		let content = `
 			<table style="margin:10px" border="1" cellspacing="0">
 				<tr>
-					<th width="100">${window.startDate}</th>
+					<th width="100">${frame.startDate}</th>
 					<th width="120">Journalier</th>
 					<th width="120">Hebdomadaire</th>
 					<th width="120">Bi-hebdomadaire</th>
@@ -37,7 +37,7 @@ export default class HTMLRenderer {
 				</tr>
 		`
 
-		window.operations.toSorted((a, b) => b.daily - a.daily).forEach(bill => {
+		frame.operations.toSorted((a, b) => b.daily - a.daily).forEach(bill => {
 			if (bill.type !== "bill") return
 
 			content += `
@@ -58,11 +58,11 @@ export default class HTMLRenderer {
 				</tr>
 				<tr>
 					<th>Totaux</th>
-					<td>${f(window.billsTotals.daily)} $</td>
-					<td>${f(window.billsTotals.weekly, true)} $</td>
-					<td>${f(window.billsTotals.biWeekly)} $</td>
-					<td>${f(window.billsTotals.monthly)} $</td>
-					<td>${f(window.billsTotals.yearly)} $</td>
+					<td>${f(frame.billsTotals.daily)} $</td>
+					<td>${f(frame.billsTotals.weekly, true)} $</td>
+					<td>${f(frame.billsTotals.biWeekly)} $</td>
+					<td>${f(frame.billsTotals.monthly)} $</td>
+					<td>${f(frame.billsTotals.yearly)} $</td>
 				</tr>
 			</table>
 		`
@@ -74,7 +74,7 @@ export default class HTMLRenderer {
 	 * Generates an HTML string representing the transactions.
 	 * @param printer A function which receives the generated HTML string
 	 */
-	public static printTransactions(transactions: Transaction[], printer: printer_t) {
+	public static renderTransactions(transactions: Transaction[], printer: printer_t) {
 		let currentMonth = -1
 		let month: number
 		let content: string = ""
@@ -83,7 +83,7 @@ export default class HTMLRenderer {
 			// Skip not charged transactions
 			if (!t.isCharged) return
 
-			month = t.date.month
+			month = t.chargeDate.getMonth()
 
 			// Show month header on each new month
 			if (month != currentMonth) {
@@ -94,14 +94,14 @@ export default class HTMLRenderer {
 				content += `
 					<table style="display:inline-flex; margin:10px" border="1" cellspacing="0" cellpadding="2">
 						<tr>
-							<th colspan="4">${t.date.monthName + " " + t.date.year}</th>
+							<th colspan="4">${t.chargeDate.getMonthName() + " " + t.chargeDate.getYear()}</th>
 						</tr>
 					`
 			}
 
 			content += `
 				<tr bgcolor="${t.balance < 0 ? '#F66' : 'lightgreen'}">
-					<td width="20" style="text-align:center">${t.date.day}</td>
+					<td width="20" style="text-align:center">${t.chargeDate.getDay()}</td>
 					<td width="100" style="text-align:left">${t.operation.name}</td>
 					<td width="75">${t.operation.isBill() ? '-' : ''}${t.operation.amount.toFixed(2)} $</td>
 					<td width="75">${t.balance.toFixed(2)} $</td>

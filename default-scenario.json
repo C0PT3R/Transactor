@@ -19,7 +19,8 @@
 			"schedule": {
 				"type": "monthly",
 				"day": 1,
-				"processingDelay": 1
+				"processingDelay": 1,
+				"businessDayPolicy": "next"
 			},
 			"transforms": [
 				{
@@ -35,7 +36,8 @@
 			"amount": 79.00,
 			"schedule": {
 				"type": "monthly",
-				"day": 5
+				"day": 5,
+				"businessDayPolicy": "next"
 			}
 		},
 		{
@@ -43,7 +45,8 @@
 			"amount": 84.74,
 			"schedule": {
 				"type": "monthly",
-				"day": 15
+				"day": 15,
+				"businessDayPolicy": "next"
 			}
 		},
 		{
@@ -51,7 +54,8 @@
 			"amount": 79.33,
 			"schedule": {
 				"type": "monthly",
-				"day": 3
+				"day": 3,
+				"businessDayPolicy": "next"
 			}
 		},
 		{
@@ -59,7 +63,8 @@
 			"amount": 63.87,
 			"schedule": {
 				"type": "monthly",
-				"day": 16
+				"day": 16,
+				"businessDayPolicy": "next"
 			}
 		},
 		{

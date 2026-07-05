@@ -1,6 +1,6 @@
+import ScheduleData from "../types/ScheduleTypes.js"
 import SimDate from "../SimDate.js"
 import Schedule from "./Schedule.js"
-import { ScheduleParams } from "./scheduleRegistry.js"
 
 
 export default class YearlySchedule extends Schedule {
@@ -8,20 +8,20 @@ export default class YearlySchedule extends Schedule {
     #day: number
     #month: number
 
-    constructor(scheduleParams: ScheduleParams) {
-        super(scheduleParams)
+    constructor(data: ScheduleData) {
+        super(data)
 
-        if (scheduleParams.day === undefined || scheduleParams.month === undefined)
+        if (data.day === undefined || data.month === undefined)
             throw new Error('Parameters "day" and "month" must both be defined for yearly schedule')
         
-        this.#day = scheduleParams.day
-        this.#month = scheduleParams.month
+        this.#day = data.day
+        this.#month = data.month
     }
 
     matches(date: SimDate): boolean {
         if (!this.isActive(date)) return false
         
-        return (date.month === this.#month && date.day === this.#day)
+        return (date.getMonth() === this.#month && date.getDay() === this.#day)
     }
 
 }

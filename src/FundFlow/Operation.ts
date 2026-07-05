@@ -1,7 +1,11 @@
-import { OperationParams, OperationType, Transform } from "./operationTypes.js"
-import Schedule from "../schedules/Schedule.js"
-import ScheduleFactory from "../schedules/ScheduleFactory.js"
+import OperationData, { Transform } from "./types/OperationTypes.js";
+import Schedule from "./schedules/Schedule.js"
+import ScheduleFactory from "./schedules/ScheduleFactory.js"
+import { applyBusinessDayPolicy, BusinessDayPolicy } from "./calendar/BusinessDayPolicy.js";
+import { BusinessCalendar } from "./calendar/BusinessCalendar.js";
+import SimDate from "./SimDate.js";
 
+export type OperationType = "payment" | "bill"
 
 const YEAR_DAYS = 365.25
 
@@ -21,13 +25,12 @@ export default class Operation {
 	public amount: number
 	public schedule: Schedule
 
-	public constructor(type: OperationType, params: OperationParams) {
+	public constructor(type: OperationType, data: OperationData) {
 		this.type = type
-		this.name = params.name
-		this.amount = params.amount
-		this.schedule = ScheduleFactory.create(params.schedule)
+		this.name = data.name
+		this.amount = data.amount
+		this.schedule = ScheduleFactory.create(data.schedule)
 	}
-
 
 	public transform(params: Transform["params"]) {
 		if (undefined !== params.amount) this.setAmount(params.amount)
@@ -35,22 +38,34 @@ export default class Operation {
 		//if (undefined !== params.recurrence) this.#recurrence = params.recurrence 
 	}
 
+	public resolveTransactionDate(scheduledDate: SimDate, calendar: BusinessCalendar): SimDate {
+		const adjustedDate = applyBusinessDayPolicy(
+			scheduledDate,
+			this.schedule.businessDayPolicy,
+			calendar
+		)
+
+		adjustedDate.addDays(this.schedule.processingDelay)
+
+		return applyBusinessDayPolicy(
+			adjustedDate,
+			this.schedule.businessDayPolicy,
+			calendar
+		)
+	}
 
 	public isPayment() {
 		return this.type === "payment"
 	}
 
-
 	public isBill() {
 		return this.type === "bill"
 	}
 	
-
 	public setAmount(v: number) {
 		if (v < 0) throw new Error("Amount cannot be negative")
 		this.amount = v
 	}
-
 
 	public get daily() {
 		return this.amount / PERIOD_DAYS[this.schedule.type]

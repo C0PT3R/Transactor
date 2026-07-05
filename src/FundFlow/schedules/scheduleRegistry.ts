@@ -13,15 +13,3 @@ export const registry = {
 
 
 export type ScheduleType = keyof typeof registry
-
-
-export interface ScheduleParams {
-	type: ScheduleType
-	day?: number
-	month?: number
-	year?: number
-	processingDelay?: number
-	startDate?: date_t
-	endDate?: date_t
-	skipWeekend?: boolean
-}

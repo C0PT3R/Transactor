@@ -1,9 +1,12 @@
-import { FundFlow } from "./FundFlow/index.js"
+import * as Flow from "./FundFlow/FundFlow.js"
 
-const engine = new FundFlow.Engine()
-const context = await FundFlow.Context.fromFile('./config.json')
-const result = engine.run(context)
+const scenario = await Flow.Scenario.fromFile('./default-scenario.json')
+const result = Flow.Engine.run(scenario)
 
-FundFlow.Renderer.render(result, (content: string) => {
+Flow.Renderer.render(result, (content: string) => {
 	document.body.innerHTML += content
 })
+
+if (result.lowestBalance) {
+	console.log(result.lowestBalance.chargeDate.toString(), result.lowestBalance.balance)
+}

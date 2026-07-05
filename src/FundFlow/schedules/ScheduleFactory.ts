@@ -1,14 +1,15 @@
-import { registry, ScheduleParams } from "./scheduleRegistry.js"
+import ScheduleData from "../types/ScheduleTypes.js"
+import { registry } from "./scheduleRegistry.js"
 
 
 export default class ScheduleFactory {
 
-    public static create(scheduleParams: ScheduleParams) {
-        const Ctor = registry[scheduleParams.type]
+    public static create(data: ScheduleData) {
+        const Ctor = registry[data.type]
 
-        if (!Ctor) throw new Error(`${scheduleParams.type} is an unknown schedule type`)
+        if (!Ctor) throw new Error(`${data.type} is an unknown schedule type`)
 
-        return new Ctor(scheduleParams)
+        return new Ctor(data)
     }
 
 }
