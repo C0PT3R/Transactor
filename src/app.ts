@@ -1,4 +1,4 @@
-import * as Flow from "./FundFlow/FundFlow.js"
+import * as Flow from "./FundFlow/FundFlow"
 
 const scenario = await Flow.Scenario.fromFile('./default-scenario.json')
 const result = Flow.Engine.run(scenario)

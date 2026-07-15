@@ -1,5 +1,5 @@
-import ScheduleData from "./ScheduleTypes.js"
-import { ScheduleType } from "../schedules/scheduleRegistry.js"
+import ScheduleData from "./ScheduleTypes"
+import { ScheduleType } from "../schedules/scheduleRegistry"
 
 export default interface OperationData {
     name: string

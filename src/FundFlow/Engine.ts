@@ -1,7 +1,7 @@
-import Result from "./Result.js"
-import Scenario from "./Scenario.js"
-import Frame from "./Frame.js"
-import Transaction from "./Transaction.js"
+import Result from "./Result"
+import Scenario from "./Scenario"
+import Frame from "./Frame"
+import Transaction from "./Transaction"
 
 
 export default class Engine {

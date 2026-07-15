@@ -1,35 +1,34 @@
-import OperationData, { Transform } from "./types/OperationTypes.js";
-import Schedule from "./schedules/Schedule.js"
-import ScheduleFactory from "./schedules/ScheduleFactory.js"
-import { applyBusinessDayPolicy, BusinessDayPolicy } from "./calendar/BusinessDayPolicy.js";
-import { BusinessCalendar } from "./calendar/BusinessCalendar.js";
-import LocalDate from "./LocalDate.js";
+import OperationData, { Transform } from "./types/OperationTypes";
+import Schedule from "./schedules/Schedule"
+import ScheduleFactory from "./schedules/ScheduleFactory"
+import { applyBusinessDayPolicy } from "./calendar/BusinessDayPolicy";
+import { BusinessCalendar } from "./calendar/BusinessCalendar";
+import LocalDate from "./LocalDate";
+import type { ScheduleType } from "./schedules/scheduleRegistry";
 
 export type OperationType = "payment" | "bill"
 
-const YEAR_DAYS = 365.25
-
-const PERIOD_DAYS = {
-	daily: 1,
-	weekly: 7,
-	biWeekly: 14,
-	monthly: YEAR_DAYS / 12,
-	yearly: YEAR_DAYS,
-} as const;
+const PERIODS_PER_YEAR: Record<ScheduleType, number> = {
+	daily: 365.25,
+	weekly: 52,
+	biWeekly: 26,
+	monthly: 12,
+	yearly: 1,
+} as const
 
 
 export default class Operation {
 
-	public type: OperationType
-	public name: string
-	public amount: number
-	public schedule: Schedule
+	public readonly type: OperationType
+	public readonly name: string
+	public readonly schedule: Schedule
+	private amount!: number
 
 	public constructor(type: OperationType, data: OperationData) {
 		this.type = type
 		this.name = data.name
-		this.amount = data.amount
 		this.schedule = ScheduleFactory.create(data.schedule)
+		this.amount = data.amount
 	}
 
 	public transform(params: Transform["params"]) {
@@ -38,6 +37,9 @@ export default class Operation {
 		//if (undefined !== params.recurrence) this.#recurrence = params.recurrence 
 	}
 
+	/**
+	 * Don't listen to stupid AI. This function does exactly what it's supposed to do.
+	 */
 	public resolveTransactionDate(scheduledDate: LocalDate, calendar: BusinessCalendar): LocalDate {
 		const adjustedDate = applyBusinessDayPolicy(
 			scheduledDate,
@@ -45,13 +47,16 @@ export default class Operation {
 			calendar
 		)
 
-		adjustedDate.addDays(this.schedule.processingDelay)
-
 		return applyBusinessDayPolicy(
-			adjustedDate,
+			adjustedDate.addDays(this.schedule.processingDelay),
 			this.schedule.businessDayPolicy,
 			calendar
 		)
+	}
+
+	public convertTo(period: ScheduleType): number {
+		const yearlyAmount = this.amount * PERIODS_PER_YEAR[this.schedule.type]
+		return yearlyAmount / PERIODS_PER_YEAR[period]
 	}
 
 	public isPayment() {
@@ -62,29 +67,23 @@ export default class Operation {
 		return this.type === "bill"
 	}
 	
-	public setAmount(v: number) {
-		if (v < 0) throw new Error("Amount cannot be negative")
-		this.amount = v
+	public setAmount(value: number) {
+		if (value === undefined) {
+			this.amount = 0
+			return
+		}
+
+        if (!Number.isFinite(value))
+            throw new Error("Amount must be a finite number")
+
+        if (value < 0)
+            throw new Error("Amount cannot be negative")
+
+		this.amount = value
 	}
 
-	public get daily() {
-		return this.amount / PERIOD_DAYS[this.schedule.type]
-	}
-
-	public get weekly() {
-		return this.daily * PERIOD_DAYS.weekly
-	}
-
-	public get biWeekly() {
-		return this.daily * PERIOD_DAYS.biWeekly
-	}
-
-	public get monthly() {
-		return this.daily * PERIOD_DAYS.monthly
-	}
-
-	public get yearly() {
-		return this.daily * PERIOD_DAYS.yearly
+	public getAmount() {
+		return this.amount
 	}
 
 }

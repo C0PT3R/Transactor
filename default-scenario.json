@@ -1,11 +1,12 @@
 {
 	"options": {
 		"endDate": [2028, 7],
-		"initialBalance": 184.01
+		"initialBalance": 265.82
 	},
 	"payments": [
 		{
 			"name": "Virement",
+			"amount": 235.00,
 			"schedule": {
 				"type": "weekly",
 				"day": 4
@@ -37,6 +38,7 @@
 			"schedule": {
 				"type": "monthly",
 				"day": 5,
+				"processingDelay": 1,
 				"businessDayPolicy": "next"
 			}
 		},

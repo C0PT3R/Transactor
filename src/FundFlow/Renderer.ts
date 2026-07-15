@@ -1,11 +1,12 @@
 import { LitElement, css, html, nothing } from "lit"
-import { customElement, property, state } from "lit/decorators.js"
 import { render as litRender } from "lit"
+import { customElement, property, state } from "lit/decorators.js"
 
-import Result from "./Result.js"
-import Frame from "./Frame.js"
-import Transaction from "./Transaction.js"
-import LocalDate from "./LocalDate.js"
+import Result from "./Result"
+import Frame from "./Frame"
+import Transaction from "./Transaction"
+import LocalDate from "./LocalDate"
+import Operation from "./Operation"
 
 const monthNames = [
 	"Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
@@ -13,16 +14,6 @@ const monthNames = [
 ]
 
 type HtmlTarget = HTMLElement | DocumentFragment
-
-type FrameOperationView = {
-	name: string
-	type: string
-	daily: number
-	weekly: number
-	biWeekly: number
-	monthly: number
-	yearly: number
-}
 
 function monthName(date: LocalDate): string {
 	return monthNames[date.getMonth() - 1]
@@ -45,9 +36,9 @@ function money(amount: number, roundUp: boolean = false): string {
 	return `${value.toFixed(2)} $`
 }
 
-function billOperations(frame: Frame): FrameOperationView[] {
+function billOperations(frame: Frame): Operation[] {
 	return frame.operations
-		.toSorted((a, b) => b.daily - a.daily)
+		.toSorted((a, b) => b.convertTo("daily") - a.convertTo("daily"))
 		.filter(operation => operation.type === "bill")
 }
 
@@ -193,15 +184,15 @@ export class FrameDetails extends LitElement {
 		`
 	}
 
-	private renderOperationRow(operation: FrameOperationView) {
+	private renderOperationRow(operation: Operation) {
 		return html`
 			<tr>
 				<th>${operation.name}</th>
-				<td>${money(operation.daily)}</td>
-				<td>${money(operation.weekly)}</td>
-				<td>${money(operation.biWeekly)}</td>
-				<td>${money(operation.monthly)}</td>
-				<td>${money(operation.yearly)}</td>
+				<td>${money(operation.convertTo("daily"))}</td>
+				<td>${money(operation.convertTo("weekly"))}</td>
+				<td>${money(operation.convertTo("biWeekly"))}</td>
+				<td>${money(operation.convertTo("monthly"))}</td>
+				<td>${money(operation.convertTo("yearly"))}</td>
 			</tr>
 		`
 	}
@@ -307,7 +298,7 @@ export class TransactionLedger extends LitElement {
 
 	private renderOperationAmount(transaction: Transaction): string {
 		const sign = transaction.operation.isBill() ? "-" : ""
-		return `${sign}${money(transaction.operation.amount)}`
+		return `${sign}${money(transaction.operation.getAmount())}`
 	}
 }
 

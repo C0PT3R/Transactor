@@ -1,4 +1,4 @@
-import OperationData from "./OperationTypes.js"
+import OperationData from "./OperationTypes"
 
 export default interface ConfigData {
     options: Options

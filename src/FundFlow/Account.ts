@@ -1,5 +1,5 @@
-import LocalDate from "./LocalDate.js"
-import Transaction from "./Transaction.js"
+import LocalDate from "./LocalDate"
+import Transaction from "./Transaction"
 
 
 export default class Account {
@@ -47,9 +47,9 @@ export default class Account {
 			if (t.chargeDate < from || t.chargeDate > until) return
 
 			if (t.operation.isBill())
-				this.#balance -= t.operation.amount
+				this.#balance -= t.operation.getAmount()
 			else
-				this.#balance += t.operation.amount
+				this.#balance += t.operation.getAmount()
 
 			t.balance = Math.round(this.#balance * 100) / 100
 			t.isCharged = true

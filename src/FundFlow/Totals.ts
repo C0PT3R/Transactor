@@ -1,13 +1,25 @@
+import Operation from "./Operation"
+
+
 export default class Totals {
 
-    public daily: number
-    public weekly: number
-    public biWeekly: number
-    public monthly: number
-    public yearly: number
+    public constructor(
+        public daily: number = 0,
+        public weekly: number = 0,
+        public biWeekly: number = 0,
+        public monthly: number = 0,
+        public yearly: number = 0
+    ) { }
 
+    public addOperation(op: Operation) {
+        this.daily += op.convertTo("daily")
+        this.weekly += op.convertTo("weekly")
+        this.biWeekly += op.convertTo("biWeekly")
+        this.monthly += op.convertTo("monthly")
+        this.yearly += op.convertTo("yearly")
+    }
 
-    public constructor() {
+    public reset() {
         this.daily = 0
         this.weekly = 0
         this.biWeekly = 0

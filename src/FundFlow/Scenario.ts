@@ -1,10 +1,10 @@
-import Account from "./Account.js"
-import Planner from "./Planner.js"
-import Frame from "./Frame.js"
-import ConfigLoader from "./ScenarioLoader.js"
-import ConfigData from "./types/ConfigTypes.js"
-import { BusinessCalendar } from "./calendar/BusinessCalendar.js"
-import { CanadaBusinessCalendar } from "./calendar/CanadaBusinessCalendar.js"
+import Account from "./Account"
+import * as Planner from "./Planner"
+import Frame from "./Frame"
+import ConfigLoader from "./ScenarioLoader"
+import ConfigData from "./types/ConfigTypes"
+import { BusinessCalendar } from "./calendar/BusinessCalendar"
+import { CanadaBusinessCalendar } from "./calendar/CanadaBusinessCalendar"
 
 
 export default class Scenario {

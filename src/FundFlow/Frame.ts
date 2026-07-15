@@ -1,16 +1,16 @@
-import Operation, { OperationType } from "./Operation.js"
-import OperationData from "./types/OperationTypes.js"
-import LocalDate from "./LocalDate.js"
-import Totals from "./Totals.js"
+import Operation, { OperationType } from "./Operation"
+import OperationData from "./types/OperationTypes"
+import LocalDate from "./LocalDate"
+import Totals from "./Totals"
 
 
 export default class Frame {
 
-	public operations: Operation[]
-	public paymentsTotals: Totals
-	public billsTotals: Totals
-	public startDate: LocalDate
-	public endDate: LocalDate
+	public readonly operations: Operation[]
+	public readonly startDate: LocalDate
+	public readonly endDate: LocalDate
+	public readonly paymentsTotals: Totals
+	public readonly billsTotals: Totals
 
 	constructor(startDate: LocalDate, endDate: LocalDate) {
 		this.operations = []
@@ -32,40 +32,42 @@ export default class Frame {
 		}
 	}
 
-	public addOperation(type: OperationType, data: OperationData) {
+	private addOperation(type: OperationType, data: OperationData) {
 		const operation = new Operation(type, data)
 		this.#checkForTransforms(operation, data.transforms)
 		this.operations.push(operation)
-		return operation
+	}
+
+	public addPayment(data: OperationData) {
+		this.addOperation("payment", data)
+	}
+
+	public addBill(data: OperationData) {
+		this.addOperation("bill", data)
 	}
 
 	public calculate() {
-		this.paymentsTotals = new Totals()
-		this.billsTotals = new Totals()
+		this.paymentsTotals.reset()
+		this.billsTotals.reset()
 
 		this.operations.forEach(op => {
-			if (op.type === "payment") {
-				this.paymentsTotals.daily += op.daily
-				this.paymentsTotals.weekly += op.weekly
-				this.paymentsTotals.biWeekly += op.biWeekly
-				this.paymentsTotals.monthly += op.monthly
-				this.paymentsTotals.yearly += op.yearly
-			} else {
-				this.billsTotals.daily += op.daily
-				this.billsTotals.weekly += op.weekly
-				this.billsTotals.biWeekly += op.biWeekly
-				this.billsTotals.monthly += op.monthly
-				this.billsTotals.yearly += op.yearly
-			}
+			const totals = (op.type === "payment") ? this.paymentsTotals : this.billsTotals
+			totals.addOperation(op)
 		})
 
-		// Calculate payments
-		/// TODO: Do proper calculations
-		this.operations.forEach(op => {
-			if (op.type === "payment" && op.amount === undefined) {
-				op.setAmount(Math.ceil(this.billsTotals[op.schedule.type] * 100) / 100)
+		this.resolveAutoPayments()
+	}
+
+	/**
+	 * Calculate payments
+	 * /// TODO: Do proper calculations
+	 */
+	private resolveAutoPayments() {
+		for (const op of this.operations) {
+			if (op.type === "payment" && op.getAmount() === undefined) {
+				op.setAmount(op.getAmount() ?? Math.ceil(this.billsTotals[op.schedule.type] * 100) / 100)
 			}
-		})
+		}
 	}
 
 }

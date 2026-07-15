@@ -1,14 +1,10 @@
-import Frame from "./Frame.js"
-import Transaction from "./Transaction.js"
+import Frame from "./Frame"
+import Transaction from "./Transaction"
 
 export default class Result {
-    frames: Frame[]
-    transactions: Transaction[]
-    lowestBalance: Transaction | null
-
-    constructor(frames: Frame[], transactions: Transaction[], lowestBalance: Transaction | null) {
-        this.frames = frames
-        this.transactions = transactions
-        this.lowestBalance = lowestBalance
-    }
+    constructor(
+        public readonly frames: readonly Frame[],
+        public readonly transactions: readonly Transaction[],
+        public readonly lowestBalance: Transaction | null
+    ) {}
 }

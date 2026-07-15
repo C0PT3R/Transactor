@@ -1,5 +1,5 @@
-import { BusinessDayPolicy } from "../calendar/BusinessDayPolicy.js"
-import { ScheduleType } from "../schedules/scheduleRegistry.js"
+import { BusinessDayPolicy } from "../calendar/BusinessDayPolicy"
+import { ScheduleType } from "../schedules/scheduleRegistry"
 
 
 export default interface ScheduleData {

@@ -1,4 +1,4 @@
-import ConfigData from "./types/ConfigTypes.js"
+import ConfigData from "./types/ConfigTypes"
 
 
 export default class ConfigLoader {

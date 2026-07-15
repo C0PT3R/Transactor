@@ -1,5 +1,5 @@
-import { BusinessCalendar } from "./BusinessCalendar.js"
-import LocalDate from "../LocalDate.js"
+import { BusinessCalendar } from "./BusinessCalendar"
+import LocalDate from "../LocalDate"
 
 
 export class CanadaBusinessCalendar extends BusinessCalendar {

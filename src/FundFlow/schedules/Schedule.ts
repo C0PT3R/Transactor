@@ -1,7 +1,7 @@
-import ScheduleData from "../types/ScheduleTypes.js"
-import LocalDate from "../LocalDate.js"
-import { ScheduleType } from "./scheduleRegistry.js"
-import { BusinessDayPolicy } from "../calendar/BusinessDayPolicy.js"
+import ScheduleData from "../types/ScheduleTypes"
+import LocalDate from "../LocalDate"
+import { ScheduleType } from "./scheduleRegistry"
+import { BusinessDayPolicy } from "../calendar/BusinessDayPolicy"
 
 
 export default abstract class Schedule {

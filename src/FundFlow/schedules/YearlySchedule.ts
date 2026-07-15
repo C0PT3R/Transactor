@@ -1,6 +1,6 @@
-import ScheduleData from "../types/ScheduleTypes.js"
-import LocalDate from "../LocalDate.js"
-import Schedule from "./Schedule.js"
+import ScheduleData from "../types/ScheduleTypes"
+import LocalDate from "../LocalDate"
+import Schedule from "./Schedule"
 
 
 export default class YearlySchedule extends Schedule {
