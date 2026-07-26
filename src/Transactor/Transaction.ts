@@ -1,5 +1,6 @@
+import { LocalDate } from "@c0pt3r/local-date"
+
 import Operation from "./Operation"
-import LocalDate from "./LocalDate"
 
 
 export default class Transaction {

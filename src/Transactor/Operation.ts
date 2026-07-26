@@ -1,9 +1,10 @@
+import { LocalDate } from "@c0pt3r/local-date"
+
 import OperationData, { Transform } from "./types/OperationTypes";
 import Schedule from "./schedules/Schedule"
 import ScheduleFactory from "./schedules/ScheduleFactory"
 import { applyBusinessDayPolicy } from "./calendar/BusinessDayPolicy";
 import { BusinessCalendar } from "./calendar/BusinessCalendar";
-import LocalDate from "./LocalDate";
 import type { ScheduleType } from "./schedules/scheduleRegistry";
 import Freezable from "./Freezable";
 

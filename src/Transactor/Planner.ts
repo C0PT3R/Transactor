@@ -1,6 +1,7 @@
+import { LocalDate } from "@c0pt3r/local-date"
+
 import ConfigData from "./types/ConfigTypes"
 import Frame from "./Frame"
-import LocalDate from "./LocalDate"
 
 
 /**

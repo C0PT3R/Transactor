@@ -1,5 +1,7 @@
-import LocalDate from "../LocalDate"
+import { LocalDate } from "@c0pt3r/local-date"
+
 import { BusinessCalendar } from "./BusinessCalendar"
+
 
 export type BusinessDayPolicy = "none" | "next" | "previous"
 

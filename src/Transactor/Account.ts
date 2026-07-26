@@ -1,5 +1,6 @@
+import { LocalDate } from "@c0pt3r/local-date"
+
 import LedgerEntry from "./LedgerEntry"
-import LocalDate from "./LocalDate"
 import Transaction from "./Transaction"
 import AccountData from "./types/AccountTypes"
 

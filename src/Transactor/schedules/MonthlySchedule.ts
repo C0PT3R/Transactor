@@ -1,5 +1,6 @@
-import ScheduleData from "../types/ScheduleTypes";
-import LocalDate from "../LocalDate";
+import { LocalDate } from "@c0pt3r/local-date"
+
+import ScheduleData from "../types/ScheduleTypes"
 import Schedule from "./Schedule"
 
 

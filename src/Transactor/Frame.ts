@@ -1,6 +1,7 @@
+import { LocalDate } from "@c0pt3r/local-date"
+
 import Operation from "./Operation"
 import OperationData from "./types/OperationTypes"
-import LocalDate from "./LocalDate"
 import Totals from "./Totals"
 import Freezable from "./Freezable"
 

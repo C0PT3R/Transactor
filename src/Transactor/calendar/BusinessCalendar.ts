@@ -1,4 +1,4 @@
-import LocalDate from "../LocalDate"
+import { LocalDate } from "@c0pt3r/local-date"
 
 
 export abstract class BusinessCalendar {

@@ -1,5 +1,6 @@
+import { LocalDate } from "@c0pt3r/local-date"
+
 import { BusinessCalendar } from "./BusinessCalendar"
-import LocalDate from "../LocalDate"
 
 
 export class CanadaBusinessCalendar extends BusinessCalendar {

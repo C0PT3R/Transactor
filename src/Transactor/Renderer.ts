@@ -1,11 +1,11 @@
 import { LitElement, css, html, nothing } from "lit"
 import { render as litRender } from "lit"
 import { customElement, property, state } from "lit/decorators.js"
+import { LocalDate } from "@c0pt3r/local-date"
 
 import Result from "./Result"
 import Frame from "./Frame"
 import Transaction from "./Transaction"
-import LocalDate from "./LocalDate"
 import Operation from "./Operation"
 import LedgerEntry from "./LedgerEntry"
 
