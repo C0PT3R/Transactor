@@ -10,7 +10,7 @@ import type {
 	AccountResult,
 	TransactionResult,
 	TotalsResult
-} from "./result/ResultBuider"
+} from "./result/ResultBuilder"
 
 
 const monthNames = [
