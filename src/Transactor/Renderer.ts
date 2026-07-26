@@ -7,6 +7,7 @@ import Frame from "./Frame"
 import Transaction from "./Transaction"
 import LocalDate from "./LocalDate"
 import Operation from "./Operation"
+import LedgerEntry from "./LedgerEntry"
 
 const monthNames = [
 	"Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
@@ -36,22 +37,22 @@ function money(amount: number, roundUp: boolean = false): string {
 	return `${value.toFixed(2)} $`
 }
 
-function billOperations(frame: Frame): Operation[] {
+function expenseOperations(frame: Frame): Operation[] {
 	return frame.operations
 		.toSorted((a, b) => b.convertTo("daily") - a.convertTo("daily"))
-		.filter(operation => operation.type === "bill")
+		.filter(operation => operation.from && !operation.to)
 }
 
-function chargedTransactionsByMonth(transactions: Transaction[]): Map<string, Transaction[]> {
-	const months = new Map<string, Transaction[]>()
+function chargedTransactionsByMonth(entries: LedgerEntry[]): Map<string, LedgerEntry[]> {
+	const months = new Map<string, LedgerEntry[]>()
 
-	for (const transaction of transactions) {
-		if (!transaction.isCharged) continue
+	for (const entry of entries) {
+		if (!entry.isCharged) continue
 
-		const key = monthKey(transaction.chargeDate)
+		const key = monthKey(entry.transaction.chargeDate)
 		const monthTransactions = months.get(key) ?? []
 
-		monthTransactions.push(transaction)
+		monthTransactions.push(entry)
 		months.set(key, monthTransactions)
 	}
 
@@ -86,7 +87,7 @@ export class BudgetReport extends LitElement {
 			</section>
 
 			<section class="report-section">
-				<transaction-ledger .transactions=${this.result.transactions}></transaction-ledger>
+				<transaction-ledger .entries=${this.result.transactions}></transaction-ledger>
 			</section>
 		`
 	}
@@ -176,7 +177,7 @@ export class FrameDetails extends LitElement {
 					</tr>
 				</thead>
 				<tbody>
-					${billOperations(frame).map(operation => this.renderOperationRow(operation))}
+					${expenseOperations(frame).map(operation => this.renderOperationRow(operation))}
 					<tr class="spacer"><td colspan="6"></td></tr>
 					${this.renderTotalsRow(frame)}
 				</tbody>
@@ -201,11 +202,11 @@ export class FrameDetails extends LitElement {
 		return html`
 			<tr>
 				<th>Totaux</th>
-				<td>${money(frame.billsTotals.daily)}</td>
-				<td>${money(frame.billsTotals.weekly, true)}</td>
-				<td>${money(frame.billsTotals.biWeekly)}</td>
-				<td>${money(frame.billsTotals.monthly)}</td>
-				<td>${money(frame.billsTotals.yearly)}</td>
+				<td>${money(frame.outflow.daily)}</td>
+				<td>${money(frame.outflow.weekly, true)}</td>
+				<td>${money(frame.outflow.biWeekly)}</td>
+				<td>${money(frame.outflow.monthly)}</td>
+				<td>${money(frame.outflow.yearly)}</td>
 			</tr>
 		`
 	}
@@ -214,7 +215,7 @@ export class FrameDetails extends LitElement {
 @customElement("transaction-ledger")
 export class TransactionLedger extends LitElement {
 	@property({ attribute: false })
-	public transactions: Transaction[] = []
+	public entries: LedgerEntry[] = []
 
 	public static styles = css`
 		:host {
@@ -260,44 +261,44 @@ export class TransactionLedger extends LitElement {
 	`
 
 	protected render() {
-		const months = chargedTransactionsByMonth(this.transactions)
+		const months = chargedTransactionsByMonth(this.entries)
 
 		return html`
 			${Array.from(months.values()).map(transactions => this.renderMonthTable(transactions))}
 		`
 	}
 
-	private renderMonthTable(transactions: Transaction[]) {
-		const first = transactions[0]
+	private renderMonthTable(entries: LedgerEntry[]) {
+		const first = entries[0]
 		if (!first) return nothing
 
 		return html`
 			<table class="month-table">
 				<thead>
 					<tr>
-						<th colspan="4">${monthTitle(first.chargeDate)}</th>
+						<th colspan="4">${monthTitle(first.transaction.chargeDate)}</th>
 					</tr>
 				</thead>
 				<tbody>
-					${transactions.map(transaction => this.renderTransactionRow(transaction))}
+					${entries.map(entry => this.renderTransactionRow(entry))}
 				</tbody>
 			</table>
 		`
 	}
 
-	private renderTransactionRow(transaction: Transaction) {
+	private renderTransactionRow(entry: LedgerEntry) {
 		return html`
-			<tr class=${transaction.balance < 0 ? "negative" : "positive"}>
-				<td class="day-column">${transaction.chargeDate.getDay()}</td>
-				<td class="name-column">${transaction.operation.name}</td>
-				<td class="amount-column">${this.renderOperationAmount(transaction)}</td>
-				<td class="amount-column">${money(transaction.balance)}</td>
+			<tr class=${entry.balanceAfter < 0 ? "negative" : "positive"}>
+				<td class="day-column">${entry.transaction.chargeDate.getDay()}</td>
+				<td class="name-column">${entry.transaction.operation.name}</td>
+				<td class="amount-column">${this.renderOperationAmount(entry.transaction)}</td>
+				<td class="amount-column">${money(entry.balanceAfter)}</td>
 			</tr>
 		`
 	}
 
 	private renderOperationAmount(transaction: Transaction): string {
-		const sign = transaction.operation.isBill() ? "-" : ""
+		const sign = transaction.operation.from ? "-" : ""
 		return `${sign}${money(transaction.operation.getAmount())}`
 	}
 }

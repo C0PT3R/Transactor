@@ -3,7 +3,9 @@ import { ScheduleType } from "../schedules/scheduleRegistry"
 
 export default interface OperationData {
     name: string
-    amount: number
+    amount: number | null
+	from?: string
+	to?: string
     schedule: ScheduleData
     transforms?: Transform[]
 }

@@ -1,22 +1,28 @@
 {
 	"options": {
-		"endDate": [2028, 7],
-		"initialBalance": 265.82
+		"endDate": [2028, 7]
 	},
-	"payments": [
+	"accounts": [
+		{
+			"id": "bills",
+			"name": "Factures",
+			"openingBalance": 487.21
+		}
+	],
+	"operations": [
 		{
 			"name": "Virement",
 			"amount": 235.00,
+			"to": "bills",
 			"schedule": {
 				"type": "weekly",
 				"day": 4
 			}
-		}
-	],
-	"bills": [
+		},
 		{
 			"name": "Loyer",
 			"amount": 620.00,
+			"from": "bills",
 			"schedule": {
 				"type": "monthly",
 				"day": 1,
@@ -35,6 +41,7 @@
 		{
 			"name": "Électricité",
 			"amount": 79.00,
+			"from": "bills",
 			"schedule": {
 				"type": "monthly",
 				"day": 5,
@@ -45,6 +52,7 @@
 		{
 			"name": "Ass. auto",
 			"amount": 84.74,
+			"from": "bills",
 			"schedule": {
 				"type": "monthly",
 				"day": 15,
@@ -54,6 +62,7 @@
 		{
 			"name": "Internet",
 			"amount": 79.33,
+			"from": "bills",
 			"schedule": {
 				"type": "monthly",
 				"day": 3,
@@ -63,6 +72,7 @@
 		{
 			"name": "Cellulaire",
 			"amount": 63.87,
+			"from": "bills",
 			"schedule": {
 				"type": "monthly",
 				"day": 16,
@@ -72,19 +82,17 @@
 		{
 			"name": "MC BMO",
 			"amount": 120.00,
+			"from": "bills",
 			"schedule": {
 				"type": "yearly",
 				"month": 2,
 				"day": 6
 			}
 		},
-
-
-
 		{
-			"group": "health",
 			"name": "Meds janvier",
 			"amount": 150.00,
+			"from": "bills",
 			"schedule": {
 				"type": "yearly",
 				"month": 1,
@@ -92,9 +100,9 @@
 			}
 		},
 		{
-			"group": "health",
 			"name": "Meds février",
 			"amount": 100.00,
+			"from": "bills",
 			"schedule": {
 				"type": "yearly",
 				"month": 2,
@@ -102,9 +110,9 @@
 			}
 		},
 		{
-			"group": "health",
 			"name": "Meds mars",
 			"amount": 100.00,
+			"from": "bills",
 			"schedule": {
 				"type": "yearly",
 				"month": 3,
@@ -112,9 +120,9 @@
 			}
 		},
 		{
-			"group": "health",
 			"name": "Meds avril",
 			"amount": 100.00,
+			"from": "bills",
 			"schedule": {
 				"type": "yearly",
 				"month": 4,
@@ -122,9 +130,9 @@
 			}
 		},
 		{
-			"group": "health",
 			"name": "Meds mai",
 			"amount": 100.00,
+			"from": "bills",
 			"schedule": {
 				"type": "yearly",
 				"month": 5,
@@ -132,9 +140,9 @@
 			}
 		},
 		{
-			"group": "health",
 			"name": "Meds juin",
 			"amount": 100.00,
+			"from": "bills",
 			"schedule": {
 				"type": "yearly",
 				"month": 6,
@@ -142,9 +150,9 @@
 			}
 		},
 		{
-			"group": "health",
 			"name": "Meds juillet",
 			"amount": 100.00,
+			"from": "bills",
 			"schedule": {
 				"type": "yearly",
 				"month": 7,
@@ -152,9 +160,9 @@
 			}
 		},
 		{
-			"group": "health",
 			"name": "Meds août",
 			"amount": 50.00,
+			"from": "bills",
 			"schedule": {
 				"type": "yearly",
 				"month": 8,

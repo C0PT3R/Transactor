@@ -9,31 +9,33 @@ import LocalDate from "./LocalDate"
  */
 export function findTransformDates(config: ConfigData): LocalDate[] {
 	const transformDates: LocalDate[] = []
-	const simStart = new LocalDate().addDays(1) // Start simulation tomorrow
+	const simStart = config.options.startDate
+		? new LocalDate(...config.options.startDate) // use config startDate...
+		: new LocalDate().addDays(1) // ...or else start simulation tomorrow
 	const simEnd = new LocalDate(...config.options.endDate)
 
 	transformDates.push(simStart, simEnd) // Add simulation start and end dates
 
-	for (const billParams of config.bills) {
+	for (const expenseParams of config.operations) {
 		// Check if operation will start after today AND before simulation end
-		if (billParams.schedule.startDate) {
-			const opStart = new LocalDate(...billParams.schedule.startDate)
+		if (expenseParams.schedule.startDate) {
+			const opStart = new LocalDate(...expenseParams.schedule.startDate)
 			if (opStart >= simStart && opStart < simEnd) {
 				transformDates.push(opStart)
 			}
 		}
 
 		// Check if operation will end after today AND before simulation end
-		if (billParams.schedule.endDate) {
-			const opEnd = new LocalDate(...billParams.schedule.endDate)
+		if (expenseParams.schedule.endDate) {
+			const opEnd = new LocalDate(...expenseParams.schedule.endDate)
 			if (opEnd >= simStart && opEnd < simEnd) {
 				transformDates.push(opEnd)
 			}
 		}
 
 		// Check if operation has set transformations
-		if (billParams.transforms) {
-			for (const tr of billParams.transforms) {
+		if (expenseParams.transforms) {
+			for (const tr of expenseParams.transforms) {
 				const trDate = new LocalDate(...tr.date)
 
 				// Add to the list if it's inside simulation schedule
@@ -61,23 +63,19 @@ export function createFrames(config: ConfigData): Frame[] {
 
 		const frame = new Frame(frameStart, frameEnd)
 
-		for (const opParams of config.payments) {
-			frame.addPayment(opParams)
-		}
-
-		for (const opParams of config.bills) {
-			// Skip bill if it's out of frame's schedule...
+		for (const opParams of config.operations) {
+			// Skip expense if it's out of frame's schedule...
 			if (
 				(opParams.schedule.startDate && new LocalDate(...opParams.schedule.startDate) > frameStart)
 				||
 				(opParams.schedule.endDate && new LocalDate(...opParams.schedule.endDate) < frameEnd)
 			) continue
 
-			// ... or else add bill to frame
-			frame.addBill(opParams)
+			// ... or else add expense to frame
+			frame.addOperation(opParams)
 		}
 
-		frame.calculate()
+		frame.resolve()
 
 		frames.push(frame)
 	}

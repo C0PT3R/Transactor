@@ -10,13 +10,17 @@ import { CanadaBusinessCalendar } from "./calendar/CanadaBusinessCalendar"
 export default class Scenario {
 
     public readonly config: ConfigData
-    public readonly account: Account
+    public readonly accounts: Account[] = []
     public readonly frames: Frame[]
     public readonly calendar: BusinessCalendar
 
     public constructor(config: ConfigData) {
         this.config = config
-        this.account = new Account(config.options.initialBalance)
+
+        for (const account of config.accounts) {
+            this.accounts.push(new Account(account))
+        }
+
         this.frames = Planner.createFrames(config)
         this.calendar = new CanadaBusinessCalendar()
     }
@@ -24,6 +28,15 @@ export default class Scenario {
     public static async fromFile(path: string): Promise<Scenario> {
         const config = await ConfigLoader.load(path)
         return new Scenario(config)
+    }
+
+    public getAccount(id: string) {
+        const account = this.accounts.find(account => account.id === id)
+
+        if (!account)
+            throw new Error(`Account "${id}" does not exist`)
+
+        return account
     }
 
 }

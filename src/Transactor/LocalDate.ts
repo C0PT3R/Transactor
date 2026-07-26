@@ -142,12 +142,11 @@ export default class LocalDate {
 	}
 
 	/**
-	 * Gets the day of week, from 0 and 6 (or 0 to 13 if bi-weekly), starting from Sunday
-	 * @param biWeekly (optional) If true, uses a bi-weekly period. Defaults to false.
+	 * Gets the day of week, from 0 and 6, starting from Sunday
 	 * @returns The day of the week
 	 */
-	public getWeekDay(biWeekly: boolean = false): number {
-		return biWeekly ? this.getEpochDay() % 14 : this.getEpochDay() % 7
+	public getWeekDay(): number {
+		return this.getEpochDay() % 7
 	}
 
 	/**
@@ -166,6 +165,20 @@ export default class LocalDate {
 	public addDays(numDays: number): this {
 		this.#date.setUTCDate(this.#date.getUTCDate() + numDays)
 		return this
+	}
+
+	/**
+	 * Checks if a date falls between a and b
+	 * @param a 
+	 * @param b 
+	 * @param inclusive 
+	 * @returns 
+	 */
+	public isBetween(a: LocalDate, b: LocalDate, inclusive: boolean = true): boolean {
+		if (inclusive)
+			return this >= a && this <= b
+		
+		return this > a && this < b
 	}
 
 	/**
