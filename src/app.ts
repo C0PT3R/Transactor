@@ -1,11 +1,9 @@
-import * as Flow from "./Transactor/FundFlow"
+import * as Transactor from "./Transactor"
 
-const scenario = await Flow.Scenario.fromFile('./default-scenario.json')
-const result = Flow.Engine.run(scenario)
+const scenario = await Transactor.Scenario.fromFile('./default-scenario.json')
+const result = Transactor.run(scenario)
 
-//console.log(result)
-
-Flow.Renderer.renderInto(result, document.body)
+Transactor.renderInto(result, document.body)
 
 if (result.lowestBalance) {
 	console.log(result.lowestBalance.transaction.chargeDate.toISO(), result.lowestBalance.balanceAfter)

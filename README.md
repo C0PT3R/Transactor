@@ -128,12 +128,12 @@ Because rules are deterministic, simulations remain reproducible.
 ## Example
 
 ```ts
-const engine = new Engine({
-    start: new Date(2026, 0, 1),
-    end: new Date(2026, 11, 31)
-});
+import * as Transactor from "./Transactor"
 
-engine.run();
+const scenario = await Transactor.Scenario.fromFile('./default-scenario.json')
+const result = Transactor.run(scenario)
+
+Transactor.renderInto(result, document.body)
 ```
 
 The engine generates every transaction, applies them in chronological order, and returns an immutable simulation.
