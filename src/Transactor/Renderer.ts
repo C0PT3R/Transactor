@@ -1,11 +1,27 @@
-import { LitElement, css, html, nothing } from "lit"
-import { render as litRender } from "lit"
-import { customElement, property, state } from "lit/decorators.js"
-import { LocalDate } from "@c0pt3r/local-date"
+import {
+	LitElement,
+	css,
+	html,
+	nothing
+} from "lit"
+
+import {
+	render as litRender
+} from "lit"
+
+import {
+	customElement,
+	property,
+	state
+} from "lit/decorators.js"
+
+import {
+	LocalDate
+} from "@c0pt3r/local-date"
 
 import type {
 	Result as ResultData,
-	FrameResult,
+	BudgetPeriodResult,
 	OperationResult,
 	AccountResult,
 	TransactionResult,
@@ -28,7 +44,17 @@ const monthNames = [
 	"Décembre"
 ]
 
-type HtmlTarget = HTMLElement | DocumentFragment
+const currencyFormatter =
+	new Intl.NumberFormat("fr-FR", {
+		style: "currency",
+		currency: "CAD",
+		minimumFractionDigits: 2,
+		maximumFractionDigits: 2
+	})
+
+type HtmlTarget =
+	HTMLElement |
+	DocumentFragment
 
 interface DateParts {
 	year: number
@@ -37,8 +63,13 @@ interface DateParts {
 }
 
 
-function parseDate(date: string): DateParts | null {
-	const match = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(date)
+function parseDate(
+	date: string
+): DateParts | null {
+	const match =
+		/^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(
+			date
+		)
 
 	if (!match)
 		return null
@@ -66,38 +97,79 @@ function parseDate(date: string): DateParts | null {
 	}
 }
 
-function monthName(month: number): string {
-	return monthNames[month - 1] ?? String(month)
+function monthName(
+	month: number
+): string {
+	return (
+		monthNames[month - 1] ??
+		String(month)
+	)
 }
 
-function dateString(date: string): string {
+function dateString(
+	date: string
+): string {
 	const parts = parseDate(date)
 
 	if (!parts)
 		return date
 
-	return `${parts.day} ${monthName(parts.month)} ${parts.year}`
+	return (
+		`${parts.day} ` +
+		`${monthName(parts.month)} ` +
+		`${parts.year}`
+	)
 }
 
-function monthTitle(date: string): string {
+function periodString(
+	period: BudgetPeriodResult
+): string {
+	if (
+		period.startDate ===
+		period.endDate
+	) {
+		return dateString(
+			period.startDate
+		)
+	}
+
+	return (
+		`${dateString(period.startDate)} — ` +
+		`${dateString(period.endDate)}`
+	)
+}
+
+function monthTitle(
+	date: string
+): string {
 	const parts = parseDate(date)
 
 	if (!parts)
 		return date
 
-	return `${monthName(parts.month)} ${parts.year}`
+	return (
+		`${monthName(parts.month)} ` +
+		`${parts.year}`
+	)
 }
 
-function monthKey(date: string): string {
+function monthKey(
+	date: string
+): string {
 	const parts = parseDate(date)
 
 	if (!parts)
 		return date
 
-	return `${parts.year}-${String(parts.month).padStart(2, "0")}`
+	return (
+		`${parts.year}-` +
+		String(parts.month).padStart(2, "0")
+	)
 }
 
-function dayString(date: string): string {
+function dayString(
+	date: string
+): string {
 	const parts = parseDate(date)
 
 	return parts
@@ -113,26 +185,13 @@ function money(
 		? Math.ceil(amount * 100) / 100
 		: Math.round(amount * 100) / 100
 
-	return `${value.toFixed(2)} $`
-}
-
-function subtractTotals(
-	inflow: TotalsResult,
-	outflow: TotalsResult
-): TotalsResult {
-	return {
-		daily: inflow.daily - outflow.daily,
-		weekly: inflow.weekly - outflow.weekly,
-		biWeekly: inflow.biWeekly - outflow.biWeekly,
-		monthly: inflow.monthly - outflow.monthly,
-		yearly: inflow.yearly - outflow.yearly
-	}
+	return currencyFormatter.format(value)
 }
 
 function expenseOperations(
-	frame: FrameResult
+	period: BudgetPeriodResult
 ): readonly OperationResult[] {
-	return frame.operations
+	return period.operations
 		.filter(operation =>
 			operation.from !== undefined &&
 			operation.to === undefined
@@ -148,11 +207,17 @@ function transactionsByMonth(
 	entries: readonly TransactionResult[]
 ): Map<string, TransactionResult[]> {
 	const months =
-		new Map<string, TransactionResult[]>()
+		new Map<
+			string,
+			TransactionResult[]
+		>()
 
 	for (const entry of entries) {
-		const key = monthKey(entry.chargedDate)
-		const monthEntries = months.get(key) ?? []
+		const key =
+			monthKey(entry.chargedDate)
+
+		const monthEntries =
+			months.get(key) ?? []
 
 		monthEntries.push(entry)
 		months.set(key, monthEntries)
@@ -163,7 +228,8 @@ function transactionsByMonth(
 
 
 @customElement("budget-report")
-export class BudgetReport extends LitElement {
+export class BudgetReport
+	extends LitElement {
 
 	@property({ attribute: false })
 	public result?: ResultData
@@ -200,18 +266,28 @@ export class BudgetReport extends LitElement {
 
 		return html`
 			<p class="report-period">
-				${dateString(this.result.period.startDate)}
+				${dateString(
+					this.result.period.startDate
+				)}
 				—
-				${dateString(this.result.period.endDate)}
+				${dateString(
+					this.result.period.endDate
+				)}
 			</p>
 
 			<section class="report-section">
-				${this.result.frames.length > 0
-					? this.result.frames.map(frame => html`
-						<frame-details
-							.frame=${frame}
-						></frame-details>
-					`)
+				<h2 class="section-title">
+					Budget
+				</h2>
+
+				${this.result.periods.length > 0
+					? this.result.periods.map(
+						period => html`
+							<budget-period-details
+								.period=${period}
+							></budget-period-details>
+						`
+					)
 					: html`
 						<p class="empty-message">
 							Aucune période.
@@ -221,12 +297,18 @@ export class BudgetReport extends LitElement {
 			</section>
 
 			<section class="report-section">
+				<h2 class="section-title">
+					Comptes
+				</h2>
+
 				${this.result.accounts.length > 0
-					? this.result.accounts.map(account => html`
-						<account-details
-							.account=${account}
-						></account-details>
-					`)
+					? this.result.accounts.map(
+						account => html`
+							<account-details
+								.account=${account}
+							></account-details>
+						`
+					)
 					: html`
 						<p class="empty-message">
 							Aucun compte.
@@ -239,11 +321,12 @@ export class BudgetReport extends LitElement {
 }
 
 
-@customElement("frame-details")
-export class FrameDetails extends LitElement {
+@customElement("budget-period-details")
+export class BudgetPeriodDetails
+	extends LitElement {
 
 	@property({ attribute: false })
-	public frame?: FrameResult
+	public period?: BudgetPeriodResult
 
 	@state()
 	private collapsed = false
@@ -285,7 +368,7 @@ export class FrameDetails extends LitElement {
 		}
 
 		.date-column {
-			width: 100px;
+			min-width: 180px;
 		}
 
 		.amount-column {
@@ -309,7 +392,7 @@ export class FrameDetails extends LitElement {
 	`
 
 	protected render() {
-		if (!this.frame)
+		if (!this.period)
 			return nothing
 
 		return html`
@@ -318,36 +401,40 @@ export class FrameDetails extends LitElement {
 				@toggle=${this.onToggle}
 			>
 				<summary>
-					${dateString(this.frame.startDate)}
+					${periodString(this.period)}
 				</summary>
 
 				${this.collapsed
 					? nothing
-					: this.renderTable(this.frame)
+					: this.renderTable(
+						this.period
+					)
 				}
 			</details>
 		`
 	}
 
-	private onToggle(event: Event): void {
+	private onToggle(
+		event: Event
+	): void {
 		this.collapsed =
-			!(event.currentTarget as HTMLDetailsElement).open
+			!(event.currentTarget as
+				HTMLDetailsElement
+			).open
 	}
 
-	private renderTable(frame: FrameResult) {
-		const expenses = expenseOperations(frame)
-
-		const net = subtractTotals(
-			frame.inflow,
-			frame.outflow
-		)
+	private renderTable(
+		period: BudgetPeriodResult
+	) {
+		const expenses =
+			expenseOperations(period)
 
 		return html`
 			<table>
 				<thead>
 					<tr>
 						<th class="date-column">
-							${dateString(frame.startDate)}
+							${periodString(period)}
 						</th>
 
 						<th class="amount-column">
@@ -359,7 +446,7 @@ export class FrameDetails extends LitElement {
 						</th>
 
 						<th class="amount-column">
-							Bi-hebdomadaire
+							Bihebdomadaire
 						</th>
 
 						<th class="amount-column">
@@ -373,8 +460,11 @@ export class FrameDetails extends LitElement {
 				</thead>
 
 				<tbody>
-					${expenses.map(operation =>
-						this.renderOperationRow(operation)
+					${expenses.map(
+						operation =>
+							this.renderOperationRow(
+								operation
+							)
 					)}
 
 					${expenses.length > 0
@@ -388,21 +478,21 @@ export class FrameDetails extends LitElement {
 
 					${this.renderTotalsRow(
 						"Entrées",
-						frame.inflow,
+						period.inflow,
 						false,
 						"summary-row"
 					)}
 
 					${this.renderTotalsRow(
 						"Sorties",
-						frame.outflow,
+						period.outflow,
 						true,
 						"summary-row"
 					)}
 
 					${this.renderTotalsRow(
 						"Net",
-						net,
+						period.net,
 						false,
 						"net-row"
 					)}
@@ -421,23 +511,33 @@ export class FrameDetails extends LitElement {
 				</th>
 
 				<td>
-					${money(operation.totals.daily)}
+					${money(
+						operation.totals.daily
+					)}
 				</td>
 
 				<td>
-					${money(operation.totals.weekly)}
+					${money(
+						operation.totals.weekly
+					)}
 				</td>
 
 				<td>
-					${money(operation.totals.biWeekly)}
+					${money(
+						operation.totals.biWeekly
+					)}
 				</td>
 
 				<td>
-					${money(operation.totals.monthly)}
+					${money(
+						operation.totals.monthly
+					)}
 				</td>
 
 				<td>
-					${money(operation.totals.yearly)}
+					${money(
+						operation.totals.yearly
+					)}
 				</td>
 			</tr>
 		`
@@ -484,7 +584,8 @@ export class FrameDetails extends LitElement {
 
 
 @customElement("account-details")
-export class AccountDetails extends LitElement {
+export class AccountDetails
+	extends LitElement {
 
 	@property({ attribute: false })
 	public account?: AccountResult
@@ -543,38 +644,48 @@ export class AccountDetails extends LitElement {
 					<p class="balance-summary">
 						<span>
 							Solde initial :
+
 							<strong
-								class=${this.account.openingBalance < 0
-									? "negative"
-									: ""
+								class=${
+									this.account
+										.openingBalance < 0
+										? "negative"
+										: ""
 								}
 							>
 								${money(
-									this.account.openingBalance
+									this.account
+										.openingBalance
 								)}
 							</strong>
 						</span>
 
 						<span>
 							Solde final :
+
 							<strong
-								class=${this.account.closingBalance < 0
-									? "negative"
-									: ""
+								class=${
+									this.account
+										.closingBalance < 0
+										? "negative"
+										: ""
 								}
 							>
 								${money(
-									this.account.closingBalance
+									this.account
+										.closingBalance
 								)}
 							</strong>
 						</span>
 
 						<span>
 							Variation :
+
 							<strong
-								class=${change < 0
-									? "negative"
-									: ""
+								class=${
+									change < 0
+										? "negative"
+										: ""
 								}
 							>
 								${money(change)}
@@ -586,7 +697,9 @@ export class AccountDetails extends LitElement {
 				${this.account.ledger.length > 0
 					? html`
 						<transaction-ledger
-							.entries=${this.account.ledger}
+							.entries=${
+								this.account.ledger
+							}
 						></transaction-ledger>
 					`
 					: html`
@@ -602,10 +715,12 @@ export class AccountDetails extends LitElement {
 
 
 @customElement("transaction-ledger")
-export class TransactionLedger extends LitElement {
+export class TransactionLedger
+	extends LitElement {
 
 	@property({ attribute: false })
-	public entries: readonly TransactionResult[] = []
+	public entries:
+		readonly TransactionResult[] = []
 
 	public static styles = css`
 		:host {
@@ -653,17 +768,24 @@ export class TransactionLedger extends LitElement {
 
 	protected render() {
 		const months =
-			transactionsByMonth(this.entries)
+			transactionsByMonth(
+				this.entries
+			)
 
 		return html`
-			${Array.from(months.values()).map(entries =>
-				this.renderMonthTable(entries)
+			${Array.from(
+				months.values()
+			).map(entries =>
+				this.renderMonthTable(
+					entries
+				)
 			)}
 		`
 	}
 
 	private renderMonthTable(
-		entries: readonly TransactionResult[]
+		entries:
+			readonly TransactionResult[]
 	) {
 		const first = entries[0]
 
@@ -675,14 +797,18 @@ export class TransactionLedger extends LitElement {
 				<thead>
 					<tr>
 						<th colspan="4">
-							${monthTitle(first.chargedDate)}
+							${monthTitle(
+								first.chargedDate
+							)}
 						</th>
 					</tr>
 				</thead>
 
 				<tbody>
 					${entries.map(entry =>
-						this.renderTransactionRow(entry)
+						this.renderTransactionRow(
+							entry
+						)
 					)}
 				</tbody>
 			</table>
@@ -693,24 +819,32 @@ export class TransactionLedger extends LitElement {
 		entry: TransactionResult
 	) {
 		const scheduledDateChanged =
-			entry.scheduledDate !== entry.chargedDate
+			entry.scheduledDate !==
+			entry.chargedDate
 
-		const title = scheduledDateChanged
-			? `Date prévue : ${dateString(
-				entry.scheduledDate
-			)}`
-			: nothing
+		const title =
+			scheduledDateChanged
+				? (
+					`Date prévue : ` +
+					dateString(
+						entry.scheduledDate
+					)
+				)
+				: nothing
 
 		return html`
 			<tr
-				class=${entry.balanceAfter < 0
-					? "negative"
-					: "positive"
+				class=${
+					entry.balanceAfter < 0
+						? "negative"
+						: "positive"
 				}
 				title=${title}
 			>
 				<td class="day-column">
-					${dayString(entry.chargedDate)}
+					${dayString(
+						entry.chargedDate
+					)}
 				</td>
 
 				<td class="name-column">
@@ -718,11 +852,15 @@ export class TransactionLedger extends LitElement {
 				</td>
 
 				<td class="amount-column">
-					${this.renderTransactionAmount(entry)}
+					${this.renderTransactionAmount(
+						entry
+					)}
 				</td>
 
 				<td class="amount-column">
-					${money(entry.balanceAfter)}
+					${money(
+						entry.balanceAfter
+					)}
 				</td>
 			</tr>
 		`
@@ -743,9 +881,6 @@ export class TransactionLedger extends LitElement {
 
 export default class Renderer {
 
-	/**
-	 * Render directly into a DOM element using Lit.
-	 */
 	public static renderInto(
 		result: ResultData,
 		target: HtmlTarget
@@ -760,9 +895,6 @@ export default class Renderer {
 		)
 	}
 
-	/**
-	 * Compatibility wrapper for the previous writer-based API.
-	 */
 	public static render(
 		result: ResultData,
 		writer: printer_t
@@ -770,7 +902,10 @@ export default class Renderer {
 		const container =
 			document.createElement("div")
 
-		this.renderInto(result, container)
+		this.renderInto(
+			result,
+			container
+		)
 
 		writer(container.innerHTML)
 	}
@@ -783,7 +918,9 @@ export default class Renderer {
 
 		return (
 			`${date.getDay()} ` +
-			`${monthNames[date.getMonth() - 1]} ` +
+			`${monthNames[
+				date.getMonth() - 1
+			]} ` +
 			`${date.getYear()}`
 		)
 	}

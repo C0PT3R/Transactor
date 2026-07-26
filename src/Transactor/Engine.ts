@@ -1,48 +1,41 @@
-import { build, type Result } from "./result/ResultBuilder"
+import { LocalDate } from "@c0pt3r/local-date"
+import Operation from "./Operation"
 import Scenario from "./Scenario"
-import Frame from "./Frame"
 import Transaction from "./Transaction"
+import { build, Result } from "./result/ResultBuilder"
 
 
 export function run(scenario: Scenario): Result {
-	for (let i = 0; i < scenario.frames.length; i++) {
-		const frame = scenario.frames[i]
+	const occurrenceStart = scenario.startDate
+		.clone()
+		.addDays(-7)
 
-		generateTransactions(scenario, frame, i === 0)
-
-		for (const account of scenario.accounts) {
-			account.charge(frame.startDate, frame.endDate)
-		}
+	for (const operation of scenario.operations) {
+		generateTransactions(scenario, operation, occurrenceStart, scenario.endDate)
 	}
 
-	return build(scenario.frames, scenario.accounts)
+	for (const account of scenario.accounts) {
+		account.charge(scenario.startDate, scenario.endDate)
+	}
+
+	return build(scenario.startDate, scenario.endDate, scenario.operations, scenario.accounts)
 }
 
-function generateTransactions(scenario: Scenario, frame: Frame, isFirstFrame: boolean): void {
-	const from = frame.startDate.clone()
+function generateTransactions(scenario: Scenario, operation: Operation, from: LocalDate, to: LocalDate): void {
+	for (const scheduledDate of operation.schedule.occurences(from, to)) {
+		const chargeDate = operation.resolveTransactionDate(scheduledDate.clone(), scenario.calendar)
 
-	if (isFirstFrame) {
-		// Generate earlier scheduled dates whose postponed charge date
-		// may fall inside the simulation.
-		from.addDays(-7)
-	}
+		if (!chargeDate.isBetween(scenario.startDate, scenario.endDate))
+			continue
 
-	for (const operation of frame.operations) {
-		for (const scheduledDate of operation.schedule.occurences(from, frame.endDate)) {
-			const chargeDate = operation.resolveTransactionDate(scheduledDate.clone(), scenario.calendar)
+		const transaction = new Transaction(operation, scheduledDate, chargeDate)
 
-			if (isFirstFrame && chargeDate < frame.startDate)
-				continue
+		if (operation.from) {
+			scenario.getAccount(operation.from).addLedgerEntry(transaction, "outflow")
+		}
 
-			const transaction = new Transaction(operation, scheduledDate, chargeDate)
-
-			if (operation.from) {
-				scenario.getAccount(operation.from).addLedgerEntry(transaction, "outflow")
-			}
-
-			if (operation.to) {
-				scenario.getAccount(operation.to).addLedgerEntry(transaction, "inflow")
-			}
+		if (operation.to) {
+			scenario.getAccount(operation.to).addLedgerEntry(transaction, "inflow")
 		}
 	}
 }

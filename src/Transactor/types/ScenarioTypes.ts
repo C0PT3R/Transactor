@@ -1,13 +1,13 @@
 import AccountData from "./AccountTypes"
 import OperationData from "./OperationTypes"
 
-export default interface ConfigData {
-    options: Options
+export default interface ScenarioData {
+    options: ScenarioOptions
     accounts: AccountData[]
     operations: OperationData[]
 }
 
-interface Options {
+interface ScenarioOptions {
     startDate?: date_t
     endDate: date_t
 }

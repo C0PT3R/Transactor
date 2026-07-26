@@ -8,10 +8,10 @@ export default interface OperationData {
 	from?: string
 	to?: string
     schedule: ScheduleData
-    transforms?: Transform[]
+    transforms?: TransformData[]
 }
 
-export interface Transform {
+export interface TransformData {
 	date: date_t
 	params: {
 		amount?: number
