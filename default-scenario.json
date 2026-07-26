@@ -1,5 +1,6 @@
 {
 	"options": {
+		"startDate": [2026, 7, 26],
 		"endDate": [2028, 7]
 	},
 	"accounts": [

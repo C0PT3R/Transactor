@@ -8,15 +8,15 @@ import { BusinessDayPolicy } from "../calendar/BusinessDayPolicy"
 export default abstract class Schedule {
 
     public readonly type: ScheduleType
-    public readonly startDate: LocalDate | undefined
-    public readonly endDate: LocalDate | undefined
+    public readonly startDate: LocalDate
+    public readonly endDate: LocalDate
     public readonly processingDelay: number
     public readonly businessDayPolicy: BusinessDayPolicy
 
-    public constructor(data: ScheduleData) {
+    public constructor(data: ScheduleData, startDate: LocalDate, endDate: LocalDate) {
         this.type = data.type
-        this.startDate = data.startDate ? new LocalDate(...data.startDate) : undefined
-        this.endDate = data.endDate ? new LocalDate(...data.endDate) : undefined
+        this.startDate = startDate
+        this.endDate = endDate
 		this.processingDelay = data.processingDelay ?? 0
         this.businessDayPolicy = data.businessDayPolicy ?? "none"
     }

@@ -1,85 +1,114 @@
 import { LocalDate } from "@c0pt3r/local-date"
+import ScenarioData from "./types/ScenarioTypes"
+import Operation from "./Operation"
+import OperationData, { TransformData } from "./types/OperationTypes"
+import ScheduleFactory from "./schedules/ScheduleFactory"
 
-import ConfigData from "./types/ConfigTypes"
-import Frame from "./Frame"
 
+export function compile(config: ScenarioData, scenarioStart: LocalDate, scenarioEnd: LocalDate): Operation[] {
+	const operations: Operation[] = []
 
-/**
- * Seeks the dates on when changes will occur during simulation
- * @returns A sorted array of dates
- */
-export function findTransformDates(config: ConfigData): LocalDate[] {
-	const transformDates: LocalDate[] = []
-	const simStart = config.options.startDate
-		? new LocalDate(...config.options.startDate) // use config startDate...
-		: new LocalDate().addDays(1) // ...or else start simulation tomorrow
-	const simEnd = new LocalDate(...config.options.endDate)
+	for (const opData of config.operations) {
+		const operationStart = opData.schedule.startDate
+			? new LocalDate(...opData.schedule.startDate)
+			: scenarioStart.clone()
 
-	transformDates.push(simStart, simEnd) // Add simulation start and end dates
+		const operationEnd = opData.schedule.endDate
+			? new LocalDate(...opData.schedule.endDate)
+			: scenarioEnd.clone()
 
-	for (const expenseParams of config.operations) {
-		// Check if operation will start after today AND before simulation end
-		if (expenseParams.schedule.startDate) {
-			const opStart = new LocalDate(...expenseParams.schedule.startDate)
-			if (opStart >= simStart && opStart < simEnd) {
-				transformDates.push(opStart)
-			}
+		const startDate = (operationStart < scenarioStart)
+			? scenarioStart.clone()
+			: operationStart.clone()
+
+		const endDate = (operationEnd && scenarioEnd)
+			? (operationEnd < scenarioEnd)
+				? operationEnd.clone()
+				: scenarioEnd.clone()
+			: operationEnd?.clone() ?? scenarioEnd?.clone()
+
+		if (endDate && startDate > endDate) continue
+
+		const transforms = (opData.transforms ?? [])
+			.map(transform => ({
+				transform,
+				date: new LocalDate(...transform.date)
+			}))
+			.filter(({ date }) =>
+				date >= operationStart &&
+				(!operationEnd || date <= operationEnd)
+			)
+			.toSorted((a, b) =>
+				a.date < b.date
+					? -1
+					: a.date > b.date
+						? 1
+						: 0
+			)
+
+		/*
+		 * This is compiler state, not a runtime Operation.
+		 * It may change while versions are being generated.
+		 */
+		let currentData = structuredClone(opData)
+		let currentStart = startDate.clone()
+		let transformIndex = 0
+
+		/*
+		 * Transformations effective before the simulation starts must
+		 * still be applied so that the first generated version is correct.
+		 */
+		while (
+			transformIndex < transforms.length &&
+			transforms[transformIndex].date <= currentStart
+		) {
+			currentData = applyTransform(currentData, transforms[transformIndex].transform)
+			transformIndex++
 		}
 
-		// Check if operation will end after today AND before simulation end
-		if (expenseParams.schedule.endDate) {
-			const opEnd = new LocalDate(...expenseParams.schedule.endDate)
-			if (opEnd >= simStart && opEnd < simEnd) {
-				transformDates.push(opEnd)
+		for (; transformIndex < transforms.length; transformIndex++) {
+			const { transform, date } = transforms[transformIndex]
+
+			if (endDate && date > endDate) break
+
+			const currentEnd = date.clone().addDays(-1)
+
+			if (currentStart <= currentEnd) {
+				operations.push(
+					createOperation(currentData, currentStart, currentEnd)
+				)
 			}
+
+			currentData = applyTransform(currentData, transform)
+
+			currentStart = date.clone()
 		}
 
-		// Check if operation has set transformations
-		if (expenseParams.transforms) {
-			for (const tr of expenseParams.transforms) {
-				const trDate = new LocalDate(...tr.date)
-
-				// Add to the list if it's inside simulation schedule
-				if (trDate >= simStart && trDate < simEnd)
-					transformDates.push(trDate)
-			}
+		if (!endDate || currentStart <= endDate) {
+			operations.push(
+				createOperation(currentData, currentStart, endDate)
+			)
 		}
 	}
 
-	const uniqueDates = [...new Map(
-		transformDates.map(date => [date.getEpochDay(), date])
-	).values()]
-
-	// Return list sorted by date
-	return uniqueDates.sort((a, b) => a.getEpochDay() - b.getEpochDay())
+	return operations
 }
 
-export function createFrames(config: ConfigData): Frame[] {
-	const transformDates = findTransformDates(config)
-	const frames: Frame[] = []
+function applyTransform(data: OperationData, transform: TransformData): OperationData {
+	return {
+		...data,
 
-	for (let i = 1; i < transformDates.length; i++) {
-		const frameStart = transformDates[i - 1]
-		const frameEnd = (i == transformDates.length - 1) ? transformDates[i] : transformDates[i].clone().addDays(-1)
+		/*
+		 * The persisted source data remains untouched.
+		 * Only this temporary compiler snapshot changes.
+		 */
+		amount: transform.params.amount ?? data.amount
 
-		const frame = new Frame(frameStart, frameEnd)
-
-		for (const opParams of config.operations) {
-			// Skip expense if it's out of frame's schedule...
-			if (
-				(opParams.schedule.startDate && new LocalDate(...opParams.schedule.startDate) > frameStart)
-				||
-				(opParams.schedule.endDate && new LocalDate(...opParams.schedule.endDate) < frameEnd)
-			) continue
-
-			// ... or else add expense to frame
-			frame.addOperation(opParams)
-		}
-
-		frame.resolve()
-
-		frames.push(frame)
+		// Other transformable properties will be added here.
 	}
+}
 
-	return frames
+function createOperation(data: OperationData, startDate: LocalDate, endDate: LocalDate): Operation {
+	const schedule = ScheduleFactory.create(data.schedule, startDate, endDate)
+	return new Operation(data, schedule)
 }

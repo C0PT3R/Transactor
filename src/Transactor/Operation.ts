@@ -1,8 +1,6 @@
 import { LocalDate } from "@c0pt3r/local-date"
-
-import OperationData, { Transform } from "./types/OperationTypes"
+import OperationData from "./types/OperationTypes"
 import Schedule from "./schedules/Schedule"
-import ScheduleFactory from "./schedules/ScheduleFactory"
 import { applyBusinessDayPolicy } from "./calendar/BusinessDayPolicy"
 import { BusinessCalendar } from "./calendar/BusinessCalendar"
 import type { ScheduleType } from "./schedules/scheduleRegistry"
@@ -26,7 +24,7 @@ export default class Operation {
 		yearly: 1,
 	} as const
 
-	public constructor(data: OperationData, startDate: LocalDate, endDate: LocalDate) {
+	public constructor(data: OperationData, schedule: Schedule) {
 		if (!data.from && !data.to)
 			throw new Error(`Operation "${data.name}" must define from or to`)
 
@@ -34,23 +32,8 @@ export default class Operation {
 		this.name = data.name
 		this.from = data.from
 		this.to = data.to
-		this.schedule = ScheduleFactory.create(data.schedule)
+		this.schedule = schedule
 		this.setAmount(data.amount)
-
-		if (data.transforms) {
-			for (const tf of data.transforms) {
-				const tfDate = new LocalDate(...tf.date)
-				
-				if (tfDate.isBetween(startDate, endDate)) {
-					this.transform(tf.params)
-				}
-			}
-		}
-	}
-
-	public transform(params: Transform["params"]): void {
-		// TODO: Add ability to transform other parameters
-		if (params.amount !== undefined) this.setAmount(params.amount)
 	}
 
 	/**

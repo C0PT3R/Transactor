@@ -8,8 +8,8 @@ export default class MonthlySchedule extends Schedule {
 
     #day: number
 
-    public constructor(data: ScheduleData) {
-        super(data)
+    public constructor(data: ScheduleData, startDate: LocalDate, endDate: LocalDate) {
+        super(data, startDate, endDate)
 
         if (data.day === undefined)
             throw new Error('Parameter "day" must be defined for monthly schedule')

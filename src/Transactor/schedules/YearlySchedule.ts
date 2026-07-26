@@ -9,8 +9,8 @@ export default class YearlySchedule extends Schedule {
     #day: number
     #month: number
 
-    public constructor(data: ScheduleData) {
-        super(data)
+    public constructor(data: ScheduleData, startDate: LocalDate, endDate: LocalDate) {
+        super(data, startDate, endDate)
 
         if (data.day === undefined || data.month === undefined)
             throw new Error('Parameters "day" and "month" must both be defined for yearly schedule')
