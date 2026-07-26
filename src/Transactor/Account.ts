@@ -1,21 +1,24 @@
 import { LocalDate } from "@c0pt3r/local-date"
 
-import LedgerEntry from "./LedgerEntry"
+import LedgerEntry, { TransactionDirection } from "./LedgerEntry"
 import Transaction from "./Transaction"
 import AccountData from "./types/AccountTypes"
+import IdGenerator from "./IdGenerator"
 
 
 export default class Account {
 
 	public readonly id: string
 	public readonly name: string
-	private balance: number
+	public readonly openingBalance: number
 	private readonly ledger: LedgerEntry[] = []
+	private balance: number
 
 	public constructor(data: AccountData) {
-		this.id = data.id
+		this.id = data.id ?? IdGenerator.generate()
 		this.name = data.name
-		this.balance = data.openingBalance ?? 0
+		this.openingBalance = data.openingBalance ?? 0
+		this.balance = this.openingBalance
 	}
 
 	public getLedgerEntries(): readonly LedgerEntry[] {
@@ -34,8 +37,12 @@ export default class Account {
 		})
 	}
 
-	public addLedgerEntry(transaction: Transaction): void {
-		const entry = new LedgerEntry(transaction)
+	public getChargedLedgerEntries() {
+		return this.getLedgerEntries().filter(entry => entry.isCharged)
+	}
+
+	public addLedgerEntry(transaction: Transaction, direction: TransactionDirection): void {
+		const entry = new LedgerEntry(transaction, direction)
 		this.ledger.push(entry)
 	}
 

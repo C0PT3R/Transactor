@@ -1,16 +1,17 @@
 import { LocalDate } from "@c0pt3r/local-date"
 
-import OperationData, { Transform } from "./types/OperationTypes";
+import OperationData, { Transform } from "./types/OperationTypes"
 import Schedule from "./schedules/Schedule"
 import ScheduleFactory from "./schedules/ScheduleFactory"
-import { applyBusinessDayPolicy } from "./calendar/BusinessDayPolicy";
-import { BusinessCalendar } from "./calendar/BusinessCalendar";
-import type { ScheduleType } from "./schedules/scheduleRegistry";
-import Freezable from "./Freezable";
+import { applyBusinessDayPolicy } from "./calendar/BusinessDayPolicy"
+import { BusinessCalendar } from "./calendar/BusinessCalendar"
+import type { ScheduleType } from "./schedules/scheduleRegistry"
+import IdGenerator from "./IdGenerator"
 
 
-export default class Operation extends Freezable {
+export default class Operation {
 
+	public readonly id: string
 	public readonly name: string
 	public readonly schedule: Schedule
 	public readonly from?: string
@@ -26,11 +27,10 @@ export default class Operation extends Freezable {
 	} as const
 
 	public constructor(data: OperationData, startDate: LocalDate, endDate: LocalDate) {
-		super()
-
 		if (!data.from && !data.to)
 			throw new Error(`Operation "${data.name}" must define from or to`)
 
+		this.id = data.id ?? IdGenerator.generate()
 		this.name = data.name
 		this.from = data.from
 		this.to = data.to
@@ -46,10 +46,6 @@ export default class Operation extends Freezable {
 				}
 			}
 		}
-	}
-
-	protected onFreeze() {
-		this.schedule.freeze()
 	}
 
 	public transform(params: Transform["params"]): void {

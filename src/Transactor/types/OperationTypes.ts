@@ -2,6 +2,7 @@ import ScheduleData from "./ScheduleTypes"
 import { ScheduleType } from "../schedules/scheduleRegistry"
 
 export default interface OperationData {
+	id?: string
     name: string
     amount: number | null
 	from?: string

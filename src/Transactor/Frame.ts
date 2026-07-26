@@ -3,10 +3,9 @@ import { LocalDate } from "@c0pt3r/local-date"
 import Operation from "./Operation"
 import OperationData from "./types/OperationTypes"
 import Totals from "./Totals"
-import Freezable from "./Freezable"
 
 
-export default class Frame extends Freezable {
+export default class Frame {
 
 	public readonly operations: Operation[]
 	public readonly startDate: LocalDate
@@ -15,7 +14,6 @@ export default class Frame extends Freezable {
 	public readonly outflow: Totals
 
 	constructor(startDate: LocalDate, endDate: LocalDate) {
-		super()
 		this.operations = []
 		this.inflow = new Totals()
 		this.outflow = new Totals()
@@ -23,26 +21,11 @@ export default class Frame extends Freezable {
 		this.endDate = endDate
 	}
 
-	protected onFreeze() {
-		for (const operation of this.operations)
-			operation.freeze()
-
-		Object.freeze(this.operations)
-		Object.freeze(this.inflow)
-		Object.freeze(this.outflow)
-	}
-
 	public addOperation(data: OperationData) {
-		if (this.frozen)
-			throw new Error("Cannot modify a frozen frame.")
-
 		this.operations.push(new Operation(data, this.startDate, this.endDate))
 	}
 
 	public resolve() {
-		if (this.frozen)
-      		throw new Error("Frame has already been resolved")
-
 		for (const op of this.operations) {
 			if (op.getAmount() === undefined) continue
 
@@ -54,8 +37,6 @@ export default class Frame extends Freezable {
 		}
 
 		this.resolveAutoPayments()
-
-		this.freeze()
 	}
 
 	/**

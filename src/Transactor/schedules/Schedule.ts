@@ -3,10 +3,9 @@ import { LocalDate } from "@c0pt3r/local-date"
 import ScheduleData from "../types/ScheduleTypes"
 import { ScheduleType } from "./scheduleRegistry"
 import { BusinessDayPolicy } from "../calendar/BusinessDayPolicy"
-import Freezable from "../Freezable"
 
 
-export default abstract class Schedule extends Freezable {
+export default abstract class Schedule {
 
     public readonly type: ScheduleType
     public readonly startDate: LocalDate | undefined
@@ -15,7 +14,6 @@ export default abstract class Schedule extends Freezable {
     public readonly businessDayPolicy: BusinessDayPolicy
 
     public constructor(data: ScheduleData) {
-        super()
         this.type = data.type
         this.startDate = data.startDate ? new LocalDate(...data.startDate) : undefined
         this.endDate = data.endDate ? new LocalDate(...data.endDate) : undefined
@@ -26,8 +24,6 @@ export default abstract class Schedule extends Freezable {
     public abstract matches(date: LocalDate): boolean
 
     public abstract occurences(from: LocalDate, to: LocalDate): Generator<LocalDate>
-
-    protected onFreeze() { }
 
     public isActive(date: LocalDate): boolean {
         if (this.startDate && date < this.startDate) {

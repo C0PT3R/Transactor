@@ -1,5 +1,5 @@
 export default interface AccountData {
-    id: string
+    id?: string
     name: string
     openingBalance?: number
 }
