@@ -5,7 +5,7 @@ import type { ScheduleData } from "../types/ScenarioTypes"
 
 export default class WeeklySchedule extends Schedule {
 
-    #day: number
+    private readonly day: number
 
     public constructor(data: ScheduleData, startDate: LocalDate, endDate: LocalDate) {
         super(data, startDate, endDate)
@@ -13,13 +13,13 @@ export default class WeeklySchedule extends Schedule {
         if (data.day === undefined)
             throw new Error('Parameter "day" must be defined for weekly schedule')
         
-        this.#day = data.day
+        this.day = data.day
     }
 
     public matches(date: LocalDate): boolean {
         if (!this.isActive(date)) return false
         
-        return date.getEpochDay() % 7 === this.#day
+        return date.getEpochDay() % 7 === this.day
     }
 
     public *occurrences(from: LocalDate, to: LocalDate): Generator<LocalDate> {
@@ -42,7 +42,7 @@ export default class WeeklySchedule extends Schedule {
         ) % 7
 
         const offset = (
-            (this.#day - currentDay) + 7
+            (this.day - currentDay) + 7
         ) % 7
 
         rangeStart.addDays(offset)

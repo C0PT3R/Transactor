@@ -44,7 +44,7 @@ export interface AccountResult {
     readonly name: string
     readonly openingBalance: number
     readonly closingBalance: number
-    readonly ledger: readonly TransactionResult[]
+    readonly transactions: readonly TransactionResult[]
 }
 
 export interface TransactionResult {

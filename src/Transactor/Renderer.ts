@@ -47,9 +47,7 @@ interface DateParts {
 }
 
 
-function parseDate(
-	date: string
-): DateParts | null {
+function parseDate(date: string): DateParts | null {
 	const match =
 		/^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(
 			date
@@ -172,14 +170,105 @@ function money(
 	return currencyFormatter.format(value)
 }
 
+function dateValue(
+	date: string
+): number | null {
+	const parts = parseDate(date)
+
+	if (!parts)
+		return null
+
+	return Date.UTC(
+		parts.year,
+		parts.month - 1,
+		parts.day
+	)
+}
+
+function dateDuringPeriod(
+	date: string,
+	period: BudgetPeriodResult
+): boolean {
+	const value = dateValue(date)
+	const startDate =
+		dateValue(period.startDate)
+	const endDate =
+		dateValue(period.endDate)
+
+	return (
+		value !== null &&
+		startDate !== null &&
+		endDate !== null &&
+		value >= startDate &&
+		value <= endDate
+	)
+}
+
+function chargedDuringPeriod(
+	transaction: TransactionResult,
+	period: BudgetPeriodResult
+): boolean {
+	return dateDuringPeriod(
+		transaction.chargedDate,
+		period
+	)
+}
+
+function operationForTransaction(
+	transaction: TransactionResult,
+	periods: readonly BudgetPeriodResult[]
+): OperationResult | undefined {
+	const scheduledPeriod = periods.find(
+		period => dateDuringPeriod(
+			transaction.scheduledDate,
+			period
+		)
+	)
+
+	return scheduledPeriod?.operations.find(
+		operation =>
+			operation.id === transaction.operationId
+	)
+}
+
+function isIncome(
+	operation: OperationResult
+): boolean {
+	return (
+		operation.from === undefined &&
+		operation.to !== undefined
+	)
+}
+
+function isExpense(
+	operation: OperationResult
+): boolean {
+	return (
+		operation.from !== undefined &&
+		operation.to === undefined
+	)
+}
+
+function transactionTotal(
+	transactions: readonly TransactionResult[],
+	predicate: (
+		transaction: TransactionResult
+	) => boolean
+): number {
+	return transactions.reduce(
+		(total, transaction) =>
+			predicate(transaction)
+				? total + transaction.amount
+				: total,
+		0
+	)
+}
+
 function expenseOperations(
 	period: BudgetPeriodResult
 ): readonly OperationResult[] {
 	return period.operations
-		.filter(operation =>
-			operation.from !== undefined &&
-			operation.to === undefined
-		)
+		.filter(isExpense)
 		.toSorted(
 			(a, b) =>
 				b.totals.daily -
@@ -248,6 +337,11 @@ export class BudgetReport
 		if (!this.result)
 			return nothing
 
+		const transactions =
+			this.result.accounts.flatMap(
+				account => account.transactions
+			)
+
 		return html`
 			<p class="report-period">
 				${dateString(
@@ -269,6 +363,8 @@ export class BudgetReport
 						period => html`
 							<budget-period-details
 								.period=${period}
+								.periods=${this.result.periods}
+								.transactions=${transactions}
 							></budget-period-details>
 						`
 					)
@@ -311,6 +407,14 @@ export class BudgetPeriodDetails
 
 	@property({ attribute: false })
 	public period?: BudgetPeriodResult
+
+	@property({ attribute: false })
+	public periods:
+		readonly BudgetPeriodResult[] = []
+
+	@property({ attribute: false })
+	public transactions:
+		readonly TransactionResult[] = []
 
 	@state()
 	private collapsed = false
@@ -412,6 +516,49 @@ export class BudgetPeriodDetails
 	) {
 		const expenses =
 			expenseOperations(period)
+		const transactions =
+			this.transactions.filter(
+				transaction =>
+					chargedDuringPeriod(
+						transaction,
+						period
+					)
+			)
+
+		const inflow = transactionTotal(
+			transactions,
+			transaction => {
+				const operation =
+					operationForTransaction(
+						transaction,
+						this.periods
+					)
+
+				return (
+					transaction.direction ===
+						"inflow" &&
+					operation !== undefined &&
+					isIncome(operation)
+				)
+			}
+		)
+		const outflow = transactionTotal(
+			transactions,
+			transaction => {
+				const operation =
+					operationForTransaction(
+						transaction,
+						this.periods
+					)
+
+				return (
+					transaction.direction ===
+						"outflow" &&
+					operation !== undefined &&
+					isExpense(operation)
+				)
+			}
+		)
 
 		return html`
 			<table>
@@ -440,6 +587,10 @@ export class BudgetPeriodDetails
 						<th class="amount-column">
 							Annuel
 						</th>
+
+						<th class="amount-column">
+							Total réel
+						</th>
 					</tr>
 				</thead>
 
@@ -447,14 +598,15 @@ export class BudgetPeriodDetails
 					${expenses.map(
 						operation =>
 							this.renderOperationRow(
-								operation
+								operation,
+								transactions
 							)
 					)}
 
 					${expenses.length > 0
 						? html`
 							<tr class="spacer">
-								<td colspan="6"></td>
+								<td colspan="7"></td>
 							</tr>
 						`
 						: nothing
@@ -463,6 +615,7 @@ export class BudgetPeriodDetails
 					${this.renderTotalsRow(
 						"Entrées",
 						period.inflow,
+						inflow,
 						false,
 						"summary-row"
 					)}
@@ -470,6 +623,7 @@ export class BudgetPeriodDetails
 					${this.renderTotalsRow(
 						"Sorties",
 						period.outflow,
+						outflow,
 						true,
 						"summary-row"
 					)}
@@ -477,6 +631,7 @@ export class BudgetPeriodDetails
 					${this.renderTotalsRow(
 						"Net",
 						period.net,
+						inflow - outflow,
 						false,
 						"net-row"
 					)}
@@ -486,8 +641,31 @@ export class BudgetPeriodDetails
 	}
 
 	private renderOperationRow(
-		operation: OperationResult
+		operation: OperationResult,
+		transactions:
+			readonly TransactionResult[]
 	) {
+		const total = transactionTotal(
+			transactions,
+			transaction => {
+				const transactionOperation =
+					operationForTransaction(
+						transaction,
+						this.periods
+					)
+
+				return (
+					transaction.operationId ===
+						operation.id &&
+					transaction.direction ===
+						"outflow" &&
+					transactionOperation !==
+						undefined &&
+					isExpense(transactionOperation)
+				)
+			}
+		)
+
 		return html`
 			<tr>
 				<th>
@@ -523,6 +701,10 @@ export class BudgetPeriodDetails
 						operation.totals.yearly
 					)}
 				</td>
+
+				<td>
+					${money(total)}
+				</td>
 			</tr>
 		`
 	}
@@ -530,6 +712,7 @@ export class BudgetPeriodDetails
 	private renderTotalsRow(
 		label: string,
 		totals: TotalsResult,
+		periodTotal: number,
 		roundWeekly: boolean = false,
 		className: string = ""
 	) {
@@ -560,6 +743,10 @@ export class BudgetPeriodDetails
 
 				<td>
 					${money(totals.yearly)}
+				</td>
+
+				<td>
+					${money(periodTotal)}
 				</td>
 			</tr>
 		`
@@ -678,11 +865,11 @@ export class AccountDetails
 					</p>
 				</header>
 
-				${this.account.ledger.length > 0
+				${this.account.transactions.length > 0
 					? html`
 						<transaction-ledger
 							.entries=${
-								this.account.ledger
+								this.account.transactions
 							}
 						></transaction-ledger>
 					`

@@ -5,7 +5,7 @@ import type { ScheduleData } from "../types/ScenarioTypes"
 
 export default class MonthlySchedule extends Schedule {
 
-    #day: number
+    private readonly day: number
 
     public constructor(data: ScheduleData, startDate: LocalDate, endDate: LocalDate) {
         super(data, startDate, endDate)
@@ -13,7 +13,7 @@ export default class MonthlySchedule extends Schedule {
         if (data.day === undefined)
             throw new Error('Parameter "day" must be defined for monthly schedule')
         
-        this.#day = data.day
+        this.day = data.day
     }
     
     public matches(date: LocalDate): boolean {
@@ -21,9 +21,9 @@ export default class MonthlySchedule extends Schedule {
 
         const lastDayOfMonth = date.getLastDayOfMonth()
 
-        const targetDay = this.#day === -1
+        const targetDay = this.day === -1
             ? lastDayOfMonth
-            : Math.min(this.#day, lastDayOfMonth)
+            : Math.min(this.day, lastDayOfMonth)
 
         return date.getDay() === targetDay
     }
@@ -41,9 +41,9 @@ export default class MonthlySchedule extends Schedule {
             const firstDayOfMonth = new LocalDate(year, month)
             const lastDayOfMonth = firstDayOfMonth.getLastDayOfMonth()
 
-            const targetDay = this.#day === -1
+            const targetDay = this.day === -1
                 ? lastDayOfMonth
-                : Math.min(this.#day, lastDayOfMonth)
+                : Math.min(this.day, lastDayOfMonth)
 
             if (targetDay >= 1 && targetDay <= lastDayOfMonth) {
                 const occurrence = new LocalDate(year, month, targetDay)

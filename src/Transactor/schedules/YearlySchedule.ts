@@ -5,8 +5,8 @@ import type { ScheduleData } from "../types/ScenarioTypes"
 
 export default class YearlySchedule extends Schedule {
 
-    #day: number
-    #month: number
+    private readonly day: number
+    private readonly month: number
 
     public constructor(data: ScheduleData, startDate: LocalDate, endDate: LocalDate) {
         super(data, startDate, endDate)
@@ -14,14 +14,14 @@ export default class YearlySchedule extends Schedule {
         if (data.day === undefined || data.month === undefined)
             throw new Error('Parameters "day" and "month" must both be defined for yearly schedule')
         
-        this.#day = data.day
-        this.#month = data.month
+        this.day = data.day
+        this.month = data.month
     }
 
     public matches(date: LocalDate): boolean {
         if (!this.isActive(date)) return false
         
-        return (date.getMonth() === this.#month && date.getDay() === this.#day)
+        return (date.getMonth() === this.month && date.getDay() === this.day)
     }
     
     public *occurrences(from: LocalDate, to: LocalDate): Generator<LocalDate> {
@@ -39,30 +39,18 @@ export default class YearlySchedule extends Schedule {
 
         if (rangeStart > rangeEnd) return
 
-        for (
-            let year = rangeStart.getYear();
-            year <= rangeEnd.getYear();
-            year++
-        ) {
-            const month = new LocalDate(year, this.#month)
+        for (let year = rangeStart.getYear(); year <= rangeEnd.getYear(); year++) {
+            const month = new LocalDate(year, this.month)
             const lastDayOfMonth = month.getLastDayOfMonth()
 
-            const targetDay = this.#day === -1
+            const targetDay = this.day === -1
                 ? lastDayOfMonth
-                : Math.min(this.#day, lastDayOfMonth)
+                : Math.min(this.day, lastDayOfMonth)
 
-            const occurrence = new LocalDate(
-                year,
-                this.#month,
-                targetDay
-            )
+            const occurrence = new LocalDate(year, this.month, targetDay)
 
-            if (
-                occurrence >= rangeStart &&
-                occurrence <= rangeEnd
-            ) {
+            if (occurrence >= rangeStart && occurrence <= rangeEnd)
                 yield occurrence
-            }
         }
     }
 

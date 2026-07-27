@@ -5,7 +5,7 @@ import type { ScheduleData } from "../types/ScenarioTypes"
 
 export default class BiweeklySchedule extends Schedule {
 
-    #day: number
+    private readonly day: number
 
     public constructor(data: ScheduleData, startDate: LocalDate, endDate: LocalDate) {
         super(data, startDate, endDate)
@@ -13,13 +13,13 @@ export default class BiweeklySchedule extends Schedule {
         if (data.day === undefined)
             throw new Error('Parameter "day" must be defined for bi-weekly schedule')
         
-        this.#day = data.day
+        this.day = data.day
     }
 
     public matches(date: LocalDate): boolean {
         if (!this.isActive(date)) return false
         
-        return date.getEpochDay() % 14 === this.#day
+        return date.getEpochDay() % 14 === this.day
     }
     
     public *occurrences(from: LocalDate, to: LocalDate): Generator<LocalDate> {
@@ -42,7 +42,7 @@ export default class BiweeklySchedule extends Schedule {
         ) % 14
 
         const offset = (
-            (this.#day - currentDay) + 14
+            (this.day - currentDay) + 14
         ) % 14
 
         rangeStart.addDays(offset)
