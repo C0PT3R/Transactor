@@ -2,16 +2,15 @@ import { LocalDate } from "@c0pt3r/local-date"
 import Operation from "./Operation"
 import Scenario from "./Scenario"
 import Transaction from "./Transaction"
-import { build, Result } from "./result/ResultBuilder"
+import { build } from "./ResultBuilder"
+import type { Result } from "./types/ResultTypes"
 
 
 export function run(scenario: Scenario): Result {
-	const occurrenceStart = scenario.startDate
-		.clone()
-		.addDays(-7)
+	const occurrenceStart = scenario.startDate.clone().addDays(-7)
 
 	for (const operation of scenario.operations) {
-		generateTransactions(scenario, operation, occurrenceStart, scenario.endDate)
+		populateLedgers(scenario, operation, occurrenceStart, scenario.endDate)
 	}
 
 	for (const account of scenario.accounts) {
@@ -21,8 +20,8 @@ export function run(scenario: Scenario): Result {
 	return build(scenario.startDate, scenario.endDate, scenario.operations, scenario.accounts)
 }
 
-function generateTransactions(scenario: Scenario, operation: Operation, from: LocalDate, to: LocalDate): void {
-	for (const scheduledDate of operation.schedule.occurences(from, to)) {
+function populateLedgers(scenario: Scenario, operation: Operation, from: LocalDate, to: LocalDate): void {
+	for (const scheduledDate of operation.schedule.occurrences(from, to)) {
 		const chargeDate = operation.resolveTransactionDate(scheduledDate.clone(), scenario.calendar)
 
 		if (!chargeDate.isBetween(scenario.startDate, scenario.endDate))
@@ -31,11 +30,11 @@ function generateTransactions(scenario: Scenario, operation: Operation, from: Lo
 		const transaction = new Transaction(operation, scheduledDate, chargeDate)
 
 		if (operation.from) {
-			scenario.getAccount(operation.from).addLedgerEntry(transaction, "outflow")
+			scenario.getAccount(operation.from).addLedgerEntry(transaction)
 		}
 
 		if (operation.to) {
-			scenario.getAccount(operation.to).addLedgerEntry(transaction, "inflow")
+			scenario.getAccount(operation.to).addLedgerEntry(transaction)
 		}
 	}
 }

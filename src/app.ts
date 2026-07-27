@@ -5,6 +5,8 @@ const result = Transactor.run(scenario)
 
 Transactor.renderInto(result, document.body)
 
+console.log(result)
+
 //if (result.lowestBalance) {
 //	console.log(result.lowestBalance.transaction.chargeDate.toISO(), result.lowestBalance.balanceAfter)
 //}

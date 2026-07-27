@@ -1,9 +1,8 @@
 import { LocalDate } from "@c0pt3r/local-date"
-
-import LedgerEntry, { TransactionDirection } from "./LedgerEntry"
+import LedgerEntry from "./LedgerEntry"
 import Transaction from "./Transaction"
-import AccountData from "./types/AccountTypes"
 import IdGenerator from "./IdGenerator"
+import type { AccountData } from "./types/ScenarioTypes"
 
 
 export default class Account {
@@ -37,13 +36,12 @@ export default class Account {
 		})
 	}
 
-	public getChargedLedgerEntries() {
+	public getChargedLedgerEntries(): readonly LedgerEntry[] {
 		return this.getLedgerEntries().filter(entry => entry.isCharged)
 	}
 
-	public addLedgerEntry(transaction: Transaction, direction: TransactionDirection): void {
-		const entry = new LedgerEntry(transaction, direction)
-		this.ledger.push(entry)
+	public addLedgerEntry(transaction: Transaction): void {
+		this.ledger.push(new LedgerEntry(transaction, this.id))
 	}
 
 	public charge(from: LocalDate, until: LocalDate): void {
@@ -61,11 +59,15 @@ export default class Account {
 			if (amount == null)
 				throw new Error("Cannot charge a transaction with an unresolved amount.")
 
-			if (operation.from === this.id)
-				this.balance -= amount
+			switch (entry.direction) {
+				case "inflow":
+					this.balance += amount
+					break
 
-			if (operation.to === this.id)
-				this.balance += amount
+				case "outflow":
+					this.balance -= amount
+					break
+			}
 
 			entry.balanceAfter = Math.round(this.balance * 100) / 100
 			entry.isCharged = true

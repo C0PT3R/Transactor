@@ -1,32 +1,16 @@
-import {
-	LitElement,
-	css,
-	html,
-	nothing
-} from "lit"
-
-import {
-	render as litRender
-} from "lit"
-
-import {
-	customElement,
-	property,
-	state
-} from "lit/decorators.js"
-
-import {
-	LocalDate
-} from "@c0pt3r/local-date"
+import { LitElement, css, html, nothing} from "lit"
+import { render as litRender} from "lit"
+import { customElement, property, state} from "lit/decorators.js"
+import { LocalDate } from "@c0pt3r/local-date"
 
 import type {
-	Result as ResultData,
+	Result,
 	BudgetPeriodResult,
 	OperationResult,
 	AccountResult,
 	TransactionResult,
 	TotalsResult
-} from "./result/ResultBuilder"
+} from "./types/ResultTypes"
 
 
 const monthNames = [
@@ -232,7 +216,7 @@ export class BudgetReport
 	extends LitElement {
 
 	@property({ attribute: false })
-	public result?: ResultData
+	public result?: Result
 
 	public static styles = css`
 		:host {
@@ -882,7 +866,7 @@ export class TransactionLedger
 export default class Renderer {
 
 	public static renderInto(
-		result: ResultData,
+		result: Result,
 		target: HtmlTarget
 	): void {
 		litRender(
@@ -896,7 +880,7 @@ export default class Renderer {
 	}
 
 	public static render(
-		result: ResultData,
+		result: Result,
 		writer: printer_t
 	): void {
 		const container =

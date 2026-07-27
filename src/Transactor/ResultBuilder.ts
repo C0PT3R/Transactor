@@ -1,74 +1,18 @@
 import { LocalDate } from "@c0pt3r/local-date"
-import Account from "../Account"
-import LedgerEntry, { TransactionDirection } from "../LedgerEntry"
-import Operation from "../Operation"
-import Totals from "../Totals"
-import type { ScheduleType } from "../schedules/scheduleRegistry"
+import Account from "./Account"
+import LedgerEntry from "./LedgerEntry"
+import Operation from "./Operation"
+import Totals from "./Totals"
 
-
-export interface Result {
-	readonly period: SimulationPeriodResult
-	readonly periods: readonly BudgetPeriodResult[]
-	readonly accounts: readonly AccountResult[]
-}
-
-export interface SimulationPeriodResult {
-	readonly startDate: string
-	readonly endDate: string
-}
-
-/**
- * Presentation-only interval during which the active compiled operations
- * do not change. This is derived from Operation schedule boundaries and is
- * not part of the simulation's domain model.
- */
-export interface BudgetPeriodResult {
-	readonly startDate: string
-	readonly endDate: string
-	readonly operations: readonly OperationResult[]
-	readonly inflow: TotalsResult
-	readonly outflow: TotalsResult
-	readonly net: TotalsResult
-}
-
-export interface OperationResult {
-	readonly id: string
-	readonly name: string
-	readonly from?: string
-	readonly to?: string
-	readonly amount: number | null
-	readonly scheduleType: ScheduleType
-	readonly startDate: string
-	readonly endDate: string
-	readonly totals: TotalsResult
-}
-
-export interface AccountResult {
-	readonly id: string
-	readonly name: string
-	readonly openingBalance: number
-	readonly closingBalance: number
-	readonly ledger: readonly TransactionResult[]
-}
-
-export interface TransactionResult {
-	readonly id: string
-	readonly operationId: string
-	readonly operationName: string
-	readonly amount: number
-	readonly direction: TransactionDirection
-	readonly scheduledDate: string
-	readonly chargedDate: string
-	readonly balanceAfter: number
-}
-
-export interface TotalsResult {
-	readonly daily: number
-	readonly weekly: number
-	readonly biWeekly: number
-	readonly monthly: number
-	readonly yearly: number
-}
+import type {
+	Result,
+	BudgetPeriodResult,
+	OperationResult,
+	AccountResult,
+	TransactionResult,
+	TotalsResult,
+	SimulationPeriodResult
+} from "./types/ResultTypes"
 
 
 function buildTotals(totals: Totals): TotalsResult {
@@ -194,7 +138,10 @@ function buildTransaction(entry: LedgerEntry): TransactionResult {
 	}
 }
 
-export function build(startDate: LocalDate, endDate: LocalDate, operations: Operation[], accounts: Account[]): Result {
+export function build(
+	startDate: LocalDate, endDate: LocalDate,
+	operations: readonly Operation[], accounts: readonly Account[]
+): Result {
 	return {
 		period: buildSimulationPeriod(startDate, endDate),
 		periods: buildBudgetPeriods(startDate, endDate, operations),

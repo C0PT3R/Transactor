@@ -1,8 +1,7 @@
 import { LocalDate } from "@c0pt3r/local-date"
-import ScenarioData from "./types/ScenarioTypes"
 import Operation from "./Operation"
-import OperationData, { TransformData } from "./types/OperationTypes"
 import ScheduleFactory from "./schedules/ScheduleFactory"
+import type { ScenarioData, OperationData, TransformData } from "./types/ScenarioTypes"
 
 
 export function compile(config: ScenarioData, scenarioStart: LocalDate, scenarioEnd: LocalDate): Operation[] {

@@ -1,9 +1,8 @@
 import { LocalDate } from "@c0pt3r/local-date"
-
 import { BusinessCalendar } from "./BusinessCalendar"
 
-
 export type BusinessDayPolicy = "none" | "next" | "previous"
+
 
 export function applyBusinessDayPolicy(date: LocalDate, policy: BusinessDayPolicy, calendar: BusinessCalendar): LocalDate {
     let adjusted = date.clone()

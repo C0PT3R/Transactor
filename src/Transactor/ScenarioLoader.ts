@@ -1,15 +1,19 @@
-import ScenarioData from "./types/ScenarioTypes"
+import type { ScenarioData } from "./types/ScenarioTypes"
 
 
-export default class ConfigLoader {
+export default class ScenarioLoader {
 
     public static async load(path: string): Promise<ScenarioData> {
         const response = await fetch(path)
-        const config: ScenarioData = await response.json()
+
+        if (!response.ok)
+            throw new Error(`Unable to load scenario '${path}' (${response.status})`)
+
+        const scenario: ScenarioData = await response.json()
 
         // TODO: Config validation...
 
-        return config
+        return scenario
     }
 
 }

@@ -1,19 +1,20 @@
 import { LocalDate } from "@c0pt3r/local-date"
-import Account from "./Account"
 import { BusinessCalendar } from "./calendar/BusinessCalendar"
 import { CanadaBusinessCalendar } from "./calendar/CanadaBusinessCalendar"
+import Account from "./Account"
 import Operation from "./Operation"
-import ConfigLoader from "./ScenarioLoader"
-import ScenarioData from "./types/ScenarioTypes"
-import * as Planner from "./Planner"
+import ScenarioLoader from "./ScenarioLoader"
+import { compile } from "./Compiler"
+import type { ScenarioData } from "./types/ScenarioTypes"
 
 
 export default class Scenario {
+	
 	public readonly startDate: LocalDate
 	public readonly endDate: LocalDate
-	public readonly operations: Operation[]
-	public readonly accounts: Account[] = []
 	public readonly calendar: BusinessCalendar
+	public readonly operations: readonly Operation[]
+	public readonly accounts: readonly Account[] = []
 
 	public constructor(scenarioData: ScenarioData) {
 	    // Scenario starts tomorrow if not provided
@@ -24,21 +25,17 @@ export default class Scenario {
 	    // Scenario end date must always be provided
 		this.endDate = new LocalDate(...scenarioData.options.endDate)
 
-		this.operations = Planner.compile(scenarioData, this.startDate, this.endDate)
-
-		for (const account of scenarioData.accounts) {
-			this.accounts.push(new Account(account))
-		}
-
+		this.operations = compile(scenarioData, this.startDate, this.endDate)
+		this.accounts = scenarioData.accounts.map(data => new Account(data))
 		this.calendar = new CanadaBusinessCalendar()
 	}
 
     public static async fromFile(path: string): Promise<Scenario> {
-        const config = await ConfigLoader.load(path)
-        return new Scenario(config)
+        const scenarioData = await ScenarioLoader.load(path)
+        return new Scenario(scenarioData)
     }
 
-    public getAccount(id: string) {
+    public getAccount(id: string): Account {
         const account = this.accounts.find(account => account.id === id)
 
         if (!account)

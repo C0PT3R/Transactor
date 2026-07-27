@@ -1,10 +1,10 @@
 import { LocalDate } from "@c0pt3r/local-date"
-import OperationData from "./types/OperationTypes"
 import Schedule from "./schedules/Schedule"
 import { applyBusinessDayPolicy } from "./calendar/BusinessDayPolicy"
 import { BusinessCalendar } from "./calendar/BusinessCalendar"
-import type { ScheduleType } from "./schedules/scheduleRegistry"
 import IdGenerator from "./IdGenerator"
+import type { ScheduleType } from "./schedules/scheduleRegistry"
+import type { OperationData } from "./types/ScenarioTypes"
 
 
 export default class Operation {
@@ -82,7 +82,7 @@ export default class Operation {
 		return this.schedule.type
 	}
 	
-	public setAmount(value: number | null): void {
+	private setAmount(value: number | null): void {
 		if (value === null) {
 			this.amount = null
 			return

@@ -1,8 +1,7 @@
 import { LocalDate } from "@c0pt3r/local-date"
-
-import ScheduleData from "../types/ScheduleTypes"
-import { ScheduleType } from "./scheduleRegistry"
-import { BusinessDayPolicy } from "../calendar/BusinessDayPolicy"
+import type { BusinessDayPolicy } from "../calendar/BusinessDayPolicy"
+import type { ScheduleType } from "./scheduleRegistry"
+import type { ScheduleData } from "../types/ScenarioTypes"
 
 
 export default abstract class Schedule {
@@ -23,7 +22,7 @@ export default abstract class Schedule {
 
     public abstract matches(date: LocalDate): boolean
 
-    public abstract occurences(from: LocalDate, to: LocalDate): Generator<LocalDate>
+    public abstract occurrences(from: LocalDate, to: LocalDate): Generator<LocalDate>
 
     public isActive(date: LocalDate): boolean {
         if (this.startDate && date < this.startDate) {

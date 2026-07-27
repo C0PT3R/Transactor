@@ -1,7 +1,6 @@
 import { LocalDate } from "@c0pt3r/local-date"
-
-import ScheduleData from "../types/ScheduleTypes"
 import Schedule from "./Schedule"
+import type { ScheduleData } from "../types/ScenarioTypes"
 
 
 export default class MonthlySchedule extends Schedule {
@@ -29,7 +28,7 @@ export default class MonthlySchedule extends Schedule {
         return date.getDay() === targetDay
     }
 
-    public *occurences(from: LocalDate, to: LocalDate): Generator<LocalDate> {
+    public *occurrences(from: LocalDate, to: LocalDate): Generator<LocalDate> {
         if (from > to) return
 
         let year = from.getYear()

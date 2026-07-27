@@ -1,6 +1,6 @@
 import { LocalDate } from "@c0pt3r/local-date"
-import ScheduleData from "../types/ScheduleTypes"
 import { registry } from "./scheduleRegistry"
+import type { ScheduleData } from "../types/ScenarioTypes"
 
 
 export default class ScheduleFactory {
