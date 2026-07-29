@@ -1,0 +1,45 @@
+/*
+ * Add these methods inside the LocalDate class.
+ * They replace the ISO parsing and display helpers currently kept in Transactor.
+ */
+
+/*
+public static fromISO(value: string): LocalDate {
+	const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
+
+	if (!match)
+		throw new Error("Invalid ISO date")
+
+	return new LocalDate(
+		Number(match[1]),
+		Number(match[2]),
+		Number(match[3])
+	)
+}
+
+public static tryFromISO(value: string): LocalDate | null {
+	try {
+		return LocalDate.fromISO(value)
+	} catch {
+		return null
+	}
+}
+
+public toLocaleString(
+	locales?: Intl.LocalesArgument,
+	options: Intl.DateTimeFormatOptions = {}
+): string {
+	const formatter = new Intl.DateTimeFormat(locales, {
+		timeZone: "UTC",
+		...options
+	})
+
+	return formatter.format(this.#date)
+}
+
+public toYearMonthISO(): string {
+	return `${this.getYear()}-${String(this.getMonth()).padStart(2, "0")}`
+}
+*/
+
+export {}

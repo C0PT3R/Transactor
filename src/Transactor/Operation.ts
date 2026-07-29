@@ -97,6 +97,13 @@ export default class Operation {
 		this.amount = value
 	}
 
+	public resolveAmount(amount: number): void {
+		if (this.amount !== null)
+			throw new Error(`Operation "${this.name}" already has an amount`)
+
+		this.setAmount(amount)
+	}
+
 	public getAmount(): number | null {
 		return this.amount
 	}

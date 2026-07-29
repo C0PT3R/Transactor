@@ -1,19 +1,19 @@
 {
 	"options": {
-		"startDate": [2026, 7, 26],
-		"endDate": [2028, 7]
+		"startDate": [2026, 7, 1],
+		"endDate": [2028, 6, 30]
 	},
 	"accounts": [
 		{
 			"id": "bills",
 			"name": "Factures",
-			"openingBalance": 487.21
+			"openingBalance": 577.27
 		}
 	],
 	"operations": [
 		{
 			"name": "Virement",
-			"amount": 235.00,
+			"amount": null,
 			"to": "bills",
 			"schedule": {
 				"type": "weekly",
