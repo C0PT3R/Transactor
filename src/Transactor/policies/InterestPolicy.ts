@@ -35,11 +35,11 @@ export default class InterestPolicy implements AccountPolicy {
 		 * the model's opening date while preserving the default first-of-month rule.
 		 */
 		const configuredStart = scheduleData.startDate
-			? new LocalDate(...scheduleData.startDate)
-			: context.startDate.clone().addDays(1)
+			? LocalDate.fromISO(scheduleData.startDate)
+			: context.startDate.clone()
 
 		const configuredEnd = scheduleData.endDate
-			? new LocalDate(...scheduleData.endDate)
+			? LocalDate.fromISO(scheduleData.endDate)
 			: context.endDate.clone()
 
 		const startDate = configuredStart < context.startDate
