@@ -9,8 +9,8 @@ export interface FinancialModelData {
 }
 
 export interface FinancialModelOptions {
-	readonly startDate?: date_t
-	readonly endDate: date_t
+	readonly startDate?: DateData
+	readonly endDate: DateData
 }
 
 export interface AccountData {
@@ -47,7 +47,7 @@ export interface OperationData {
 }
 
 export interface TransformData {
-	readonly date: date_t
+	readonly date: DateData
 	readonly params: {
 		readonly amount?: number
 		readonly schedule?: ScheduleType
@@ -62,6 +62,8 @@ export interface ScheduleData {
 	readonly year?: number
 	readonly processingDelay?: number
 	readonly businessDayPolicy?: BusinessDayPolicy
-	readonly startDate?: date_t
-	readonly endDate?: date_t
+	readonly startDate?: DateData
+	readonly endDate?: DateData
 }
+
+export type DateData = string

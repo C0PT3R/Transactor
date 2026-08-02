@@ -9,11 +9,11 @@ export function compile(config: FinancialModelData, modelStart: LocalDate, model
 
 	for (const opData of config.operations) {
 		const operationStart = opData.schedule.startDate
-			? new LocalDate(...opData.schedule.startDate)
+			? LocalDate.fromISO(opData.schedule.startDate)
 			: modelStart.clone()
 
 		const operationEnd = opData.schedule.endDate
-			? new LocalDate(...opData.schedule.endDate)
+			? LocalDate.fromISO(opData.schedule.endDate)
 			: modelEnd.clone()
 
 		const startDate = (operationStart < modelStart)
@@ -31,7 +31,7 @@ export function compile(config: FinancialModelData, modelStart: LocalDate, model
 		const transforms = (opData.transforms ?? [])
 			.map(transform => ({
 				transform,
-				date: new LocalDate(...transform.date)
+				date: LocalDate.fromISO(transform.date)
 			}))
 			.filter(({ date }) =>
 				date >= operationStart &&

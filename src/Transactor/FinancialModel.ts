@@ -23,10 +23,10 @@ export default class FinancialModel {
 	public constructor(modelData: FinancialModelData) {
 		// The model starts tomorrow if not provided.
 		this.startDate = modelData.options.startDate
-			? new LocalDate(...modelData.options.startDate)
+			? LocalDate.fromISO(modelData.options.startDate)
 			: new LocalDate().addDays(1)
 
-		this.endDate = new LocalDate(...modelData.options.endDate)
+		this.endDate = LocalDate.fromISO(modelData.options.endDate)
 		this.accounts = modelData.accounts.map(data => new Account(data))
 
 		const configuredOperations = compile(

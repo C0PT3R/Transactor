@@ -1,15 +1,7 @@
 {
 	"options": {
-		"startDate": [
-			2026,
-			7,
-			1
-		],
-		"endDate": [
-			2028,
-			6,
-			30
-		]
+		"startDate": "2026-07-01",
+		"endDate": "2028-06-30"
 	},
 	"accounts": [
 		{
@@ -44,11 +36,7 @@
 			},
 			"transforms": [
 				{
-					"date": [
-						2027,
-						7,
-						1
-					],
+					"date": "2027-07-01",
 					"params": {
 						"amount": 650.0
 					}
