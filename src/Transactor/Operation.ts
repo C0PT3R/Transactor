@@ -4,8 +4,16 @@ import { applyBusinessDayPolicy } from "./calendar/BusinessDayPolicy"
 import { BusinessCalendar } from "./calendar/BusinessCalendar"
 import IdGenerator from "./IdGenerator"
 import type { ScheduleType } from "./schedules/scheduleRegistry"
-import type { OperationData } from "./types/ScenarioTypes"
+import type { OperationData } from "./types/FinancialModelTypes"
 
+
+export type OperationKind = "standard" | "interestPayment" | "funding"
+export type OperationOrigin = "configured" | "generated"
+
+export interface OperationMetadata {
+	readonly kind?: OperationKind
+	readonly origin?: OperationOrigin
+}
 
 export default class Operation {
 
@@ -14,6 +22,8 @@ export default class Operation {
 	public readonly schedule: Schedule
 	public readonly from?: string
 	public readonly to?: string
+	public readonly kind: OperationKind
+	public readonly origin: OperationOrigin
 	private amount: number | null = null
 
 	private static readonly PERIODS_PER_YEAR: Record<ScheduleType, number> = {
@@ -24,7 +34,11 @@ export default class Operation {
 		yearly: 1,
 	} as const
 
-	public constructor(data: OperationData, schedule: Schedule) {
+	public constructor(
+		data: OperationData,
+		schedule: Schedule,
+		metadata: OperationMetadata = {}
+	) {
 		if (!data.from && !data.to)
 			throw new Error(`Operation "${data.name}" must define from or to`)
 
@@ -33,11 +47,13 @@ export default class Operation {
 		this.from = data.from
 		this.to = data.to
 		this.schedule = schedule
+		this.kind = metadata.kind ?? "standard"
+		this.origin = metadata.origin ?? "configured"
 		this.setAmount(data.amount)
 	}
 
 	/**
-	 * Don't listen to stupid AI. This function does exactly what it's supposed to do.
+	 * Resolves the real posting date from the scheduled occurrence date.
 	 */
 	public resolveTransactionDate(scheduledDate: LocalDate, calendar: BusinessCalendar): LocalDate {
 		const adjustedDate = applyBusinessDayPolicy(
@@ -72,27 +88,37 @@ export default class Operation {
 		return !!this.from && !!this.to
 	}
 
-	public isAutomaticPayment(): boolean {
-		return !this.from &&
-			!!this.to &&
-			this.getAmount() === null
+	public isInterestPayment(): boolean {
+		return this.kind === "interestPayment"
+	}
+
+	public isFunding(): boolean {
+		return this.kind === "funding"
+	}
+
+	public isGenerated(): boolean {
+		return this.origin === "generated"
+	}
+
+	public isConfigured(): boolean {
+		return this.origin === "configured"
 	}
 
 	public getScheduleType(): ScheduleType {
 		return this.schedule.type
 	}
-	
+
 	private setAmount(value: number | null): void {
 		if (value === null) {
 			this.amount = null
 			return
 		}
 
-        if (!Number.isFinite(value))
-            throw new Error(`Amount for operation "${this.name}" must be a finite number`)
+		if (!Number.isFinite(value))
+			throw new Error(`Amount for operation "${this.name}" must be a finite number`)
 
-        if (value < 0)
-            throw new Error(`Amount for operation "${this.name}" cannot be negative`)
+		if (value < 0)
+			throw new Error(`Amount for operation "${this.name}" cannot be negative`)
 
 		this.amount = value
 	}

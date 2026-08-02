@@ -39,6 +39,8 @@ function buildOperation(operation: Operation): OperationResult {
 		from: operation.from,
 		to: operation.to,
 		amount: operation.getAmount(),
+		kind: operation.kind,
+		origin: operation.origin,
 		scheduleType: operation.getScheduleType(),
 		startDate: operation.schedule.startDate.toJSON(),
 		endDate: operation.schedule.endDate.toJSON(),
@@ -61,7 +63,7 @@ function buildAccount(account: Account): AccountResult {
 function buildTransaction(entry: LedgerEntry): TransactionResult {
 	const {transaction, balanceAfter} = entry
 	const { operation } = transaction
-	const amount = operation.getAmount()
+	const amount = transaction.getAmount()
 
 	if (amount === null)
 		throw new Error(`Transaction "${transaction.id}" belongs to unresolved operation "${operation.name}".`)

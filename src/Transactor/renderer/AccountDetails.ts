@@ -2,6 +2,7 @@ import { LitElement, css, html, nothing } from "lit"
 import { customElement, property } from "lit/decorators.js"
 import { money } from "./Formatters"
 import "./TransactionLedger"
+import "./AccountBalanceChart"
 
 import type { AccountResult } from "../types/ResultTypes"
 
@@ -11,6 +12,9 @@ export class AccountDetails extends LitElement {
 
 	@property({ attribute: false })
 	public account?: AccountResult
+
+	@property({ type: String })
+	public startDate = ""
 
 	public static styles = css`
 		:host { display: block; margin: 10px 10px 24px; }
@@ -56,7 +60,13 @@ export class AccountDetails extends LitElement {
 				</header>
 
 				${this.account.transactions.length > 0
-					? html`<transaction-ledger .entries=${this.account.transactions}></transaction-ledger>`
+					? html`
+						<account-balance-chart
+							.account=${this.account}
+							.startDate=${this.startDate}
+						></account-balance-chart>
+						<transaction-ledger .entries=${this.account.transactions}></transaction-ledger>
+					`
 					: html`<p class="empty-message">Aucune transaction.</p>`
 				}
 			</section>

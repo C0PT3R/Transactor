@@ -70,7 +70,10 @@ export class BudgetReport extends LitElement {
 
 				${this.result.accounts.length > 0
 					? this.result.accounts.map(account => html`
-						<account-details .account=${account}></account-details>
+						<account-details
+							.account=${account}
+							.startDate=${this.result?.period.startDate}
+						></account-details>
 					`)
 					: html`<p class="empty-message">Aucun compte.</p>`
 				}

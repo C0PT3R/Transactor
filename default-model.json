@@ -1,31 +1,40 @@
 {
 	"options": {
-		"startDate": [2026, 7, 1],
-		"endDate": [2028, 6, 30]
+		"startDate": [
+			2026,
+			7,
+			1
+		],
+		"endDate": [
+			2028,
+			6,
+			30
+		]
 	},
 	"accounts": [
 		{
 			"id": "bills",
 			"name": "Factures",
-			"openingBalance": 577.39,
-			"interest": {
+			"openingBalance": 577.27,
+			"interestPolicy": {
 				"rate": 0.0175
-			}
+			},
+			"fundingStrategies": [
+				{
+					"kind": "evenPayments",
+					"name": "Virement",
+					"schedule": {
+						"period": "weekly",
+						"day": 4
+					}
+				}
+			]
 		}
 	],
 	"operations": [
 		{
-			"name": "Virement",
-			"amount": null,
-			"to": "bills",
-			"schedule": {
-				"period": "weekly",
-				"day": 4
-			}
-		},
-		{
 			"name": "Loyer",
-			"amount": 620.00,
+			"amount": 620.0,
 			"from": "bills",
 			"schedule": {
 				"period": "monthly",
@@ -35,16 +44,20 @@
 			},
 			"transforms": [
 				{
-					"date": [2027, 7, 1],
+					"date": [
+						2027,
+						7,
+						1
+					],
 					"params": {
-						"amount": 650.00
+						"amount": 650.0
 					}
 				}
 			]
 		},
 		{
 			"name": "Électricité",
-			"amount": 79.00,
+			"amount": 79.0,
 			"from": "bills",
 			"schedule": {
 				"period": "monthly",
@@ -85,7 +98,7 @@
 		},
 		{
 			"name": "MC BMO",
-			"amount": 120.00,
+			"amount": 120.0,
 			"from": "bills",
 			"schedule": {
 				"period": "yearly",
@@ -95,7 +108,7 @@
 		},
 		{
 			"name": "Meds janvier",
-			"amount": 150.00,
+			"amount": 150.0,
 			"from": "bills",
 			"schedule": {
 				"period": "yearly",
@@ -105,7 +118,7 @@
 		},
 		{
 			"name": "Meds février",
-			"amount": 100.00,
+			"amount": 100.0,
 			"from": "bills",
 			"schedule": {
 				"period": "yearly",
@@ -115,7 +128,7 @@
 		},
 		{
 			"name": "Meds mars",
-			"amount": 100.00,
+			"amount": 100.0,
 			"from": "bills",
 			"schedule": {
 				"period": "yearly",
@@ -125,7 +138,7 @@
 		},
 		{
 			"name": "Meds avril",
-			"amount": 100.00,
+			"amount": 100.0,
 			"from": "bills",
 			"schedule": {
 				"period": "yearly",
@@ -135,7 +148,7 @@
 		},
 		{
 			"name": "Meds mai",
-			"amount": 100.00,
+			"amount": 100.0,
 			"from": "bills",
 			"schedule": {
 				"period": "yearly",
@@ -145,7 +158,7 @@
 		},
 		{
 			"name": "Meds juin",
-			"amount": 100.00,
+			"amount": 100.0,
 			"from": "bills",
 			"schedule": {
 				"period": "yearly",
@@ -155,7 +168,7 @@
 		},
 		{
 			"name": "Meds juillet",
-			"amount": 100.00,
+			"amount": 100.0,
 			"from": "bills",
 			"schedule": {
 				"period": "yearly",
@@ -165,7 +178,7 @@
 		},
 		{
 			"name": "Meds août",
-			"amount": 50.00,
+			"amount": 50.0,
 			"from": "bills",
 			"schedule": {
 				"period": "yearly",

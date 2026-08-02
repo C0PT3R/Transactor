@@ -2,7 +2,11 @@ import { LocalDate } from "@c0pt3r/local-date"
 import LedgerEntry from "./LedgerEntry"
 import Transaction from "./Transaction"
 import IdGenerator from "./IdGenerator"
-import type { AccountData } from "./types/ScenarioTypes"
+import InterestPolicy from "./policies/InterestPolicy"
+import EvenPaymentsFundingStrategy from "./strategies/EvenPaymentsFundingStrategy"
+import type Operation from "./Operation"
+import type { AccountBehavior, AccountBehaviorContext, AccountPolicy, FundingStrategy } from "./behaviors/AccountBehavior"
+import type { AccountData, FundingStrategyData } from "./types/FinancialModelTypes"
 
 
 export default class Account {
@@ -10,6 +14,8 @@ export default class Account {
 	public readonly id: string
 	public readonly name: string
 	public readonly openingBalance: number
+	public readonly policies: readonly AccountPolicy[]
+	public readonly fundingStrategies: readonly FundingStrategy[]
 	private readonly ledger: LedgerEntry[] = []
 	private balance: number
 
@@ -18,14 +24,36 @@ export default class Account {
 		this.name = data.name
 		this.openingBalance = data.openingBalance ?? 0
 		this.balance = this.openingBalance
+		this.policies = data.interestPolicy
+			? [new InterestPolicy(data.interestPolicy)]
+			: []
+		this.fundingStrategies = (data.fundingStrategies ?? [])
+			.map(createFundingStrategy)
+	}
+
+	public generateOperations(context: AccountBehaviorContext): readonly Operation[] {
+		const behaviors: readonly AccountBehavior[] = [
+			...this.policies,
+			...this.fundingStrategies
+		]
+
+		return behaviors.flatMap(behavior => behavior.generateOperations(this, context))
 	}
 
 	public getLedgerEntries(): readonly LedgerEntry[] {
 		return this.ledger.toSorted((a, b) => {
-			// Sort by date first, then incoming before outgoing
 			if (a.transaction.chargeDate < b.transaction.chargeDate) return -1
 			if (a.transaction.chargeDate > b.transaction.chargeDate) return 1
 
+			/*
+			 * Interest paid today represents accrual through yesterday and must be
+			 * applied before any other transaction charged today.
+			 */
+			const aInterest = a.transaction.operation.isInterestPayment()
+			const bInterest = b.transaction.operation.isInterestPayment()
+			if (aInterest !== bInterest) return aInterest ? -1 : 1
+
+			// For all other same-day entries, incoming transactions precede outgoing ones.
 			const aIncoming = a.transaction.operation.to === this.id
 			const bIncoming = b.transaction.operation.to === this.id
 
@@ -49,12 +77,11 @@ export default class Account {
 			if (entry.isCharged) continue
 
 			const transaction = entry.transaction
-			const operation = transaction.operation
 			const inChargingWindow = transaction.chargeDate.isBetween(from, until)
 
 			if (!inChargingWindow) continue
 
-			const amount = operation.getAmount()
+			const amount = transaction.getAmount()
 
 			if (amount == null)
 				throw new Error("Cannot charge a transaction with an unresolved amount.")
@@ -87,4 +114,11 @@ export default class Account {
 		return result
 	}
 
+}
+
+function createFundingStrategy(data: FundingStrategyData): FundingStrategy {
+	switch (data.kind) {
+		case "evenPayments":
+			return new EvenPaymentsFundingStrategy(data)
+	}
 }

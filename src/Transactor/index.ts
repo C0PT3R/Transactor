@@ -1,4 +1,4 @@
-export { default as Scenario } from "./Scenario"
+export { default as FinancialModel } from "./FinancialModel"
 export { run } from "./Engine"
 export { build } from "./ResultBuilder"
 

@@ -1,6 +1,6 @@
 import { LocalDate } from "@c0pt3r/local-date"
 import Schedule from "./Schedule"
-import type { ScheduleData } from "../types/ScenarioTypes"
+import type { ScheduleData } from "../types/FinancialModelTypes"
 
 
 export default class YearlySchedule extends Schedule {

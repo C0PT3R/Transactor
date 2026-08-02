@@ -1,5 +1,5 @@
-import { dateDuringPeriod } from "./DateInterpreter"
-import { isExpense, isIncome } from "./OperationInterpreter"
+import { dateDuringPeriod } from "./DateQueries"
+import { isExpense, isIncome } from "./OperationQueries"
 
 import type { BudgetPeriodResult, OperationResult, Result } from "../types/ResultTypes"
 

@@ -1,10 +1,10 @@
 import { LitElement, css, html, nothing } from "lit"
 import { customElement, property } from "lit/decorators.js"
-import { isExpense, isIncome } from "../interpreter/OperationInterpreter"
-import { getChargedOperationTotals } from "../interpreter/ResultInterpreter"
+import { isExpense, isIncome } from "../queries/OperationQueries"
+import { getChargedOperationTotals } from "../queries/ResultQueries"
 import { money, periodString } from "./Formatters"
 
-import type { OperationChargedTotal } from "../interpreter/ResultInterpreter"
+import type { OperationChargedTotal } from "../queries/ResultQueries"
 import type { Result } from "../types/ResultTypes"
 
 

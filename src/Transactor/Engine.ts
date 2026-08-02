@@ -1,102 +1,244 @@
 import { LocalDate } from "@c0pt3r/local-date"
 import Account from "./Account"
+import FinancialModel from "./FinancialModel"
+import InterestPaymentOperation from "./operations/InterestPaymentOperation"
+import FundingOperation from "./operations/FundingOperation"
 import Operation from "./Operation"
-import Scenario from "./Scenario"
 import Transaction from "./Transaction"
 import { build } from "./ResultBuilder"
+import type LedgerEntry from "./LedgerEntry"
 import type { Result } from "./types/ResultTypes"
 
 
-export function run(scenario: Scenario): Result {
-	const occurrenceStart = scenario.startDate.clone().addDays(-7)
+export function run(model: FinancialModel): Result {
+	const occurrenceStart = model.startDate.clone().addDays(-7)
 
-	for (const operation of scenario.operations) {
-		populateLedgers(scenario, operation, occurrenceStart, scenario.endDate)
+	for (const operation of model.operations) {
+		populateLedgers(model, operation, occurrenceStart, model.endDate)
 	}
 
-	resolveAutoPayments(scenario)
+	/*
+	 * Funding is currently calculated without interest, then interest is
+	 * calculated from the funded balances. This intentionally preserves the
+	 * existing conservative behavior until the fixed-point relationship between
+	 * funding strategies and account policies is formally designed.
+	 */
+	resolveFunding(model)
+	resolveInterests(model)
+	validateTransactions(model)
 
-	for (const account of scenario.accounts) {
-		account.charge(scenario.startDate, scenario.endDate)
+	for (const account of model.accounts) {
+		account.charge(model.startDate, model.endDate)
 	}
 
-	return build(scenario.startDate, scenario.endDate, scenario.operations, scenario.accounts)
+	return build(model.startDate, model.endDate, model.operations, model.accounts)
 }
 
-function populateLedgers(scenario: Scenario, operation: Operation, from: LocalDate, to: LocalDate): void {
+function populateLedgers(
+	model: FinancialModel,
+	operation: Operation,
+	from: LocalDate,
+	to: LocalDate
+): void {
 	for (const scheduledDate of operation.schedule.occurrences(from, to)) {
-		const chargeDate = operation.resolveTransactionDate(scheduledDate.clone(), scenario.calendar)
+		const chargeDate = operation.resolveTransactionDate(
+			scheduledDate.clone(),
+			model.calendar
+		)
 
-		if (!chargeDate.isBetween(scenario.startDate, scenario.endDate))
+		if (!chargeDate.isBetween(model.startDate, model.endDate))
 			continue
 
 		const transaction = new Transaction(operation, scheduledDate, chargeDate)
 
-		if (operation.from) {
-			scenario.getAccount(operation.from).addLedgerEntry(transaction)
-		}
+		if (operation.from)
+			model.getAccount(operation.from).addLedgerEntry(transaction)
 
-		if (operation.to) {
-			scenario.getAccount(operation.to).addLedgerEntry(transaction)
-		}
+		if (operation.to)
+			model.getAccount(operation.to).addLedgerEntry(transaction)
 	}
 }
 
-function resolveAutoPayments(scenario: Scenario): void {
-	for (const account of scenario.accounts) {
-		const automaticPayments = scenario.operations.filter(operation =>
-			operation.isAutomaticPayment() && operation.to === account.id
-		)
+function resolveFunding(model: FinancialModel): void {
+	for (const account of model.accounts) {
+		const fundingOperations = model.operations
+			.filter((operation): operation is FundingOperation =>
+				operation instanceof FundingOperation && operation.to === account.id
+			)
+			.toSorted((a, b) =>
+				a.schedule.startDate.getEpochDay() - b.schedule.startDate.getEpochDay()
+			)
 
-		if (automaticPayments.length === 0) continue
+		assertFundingPeriodsDoNotOverlap(account, fundingOperations)
 
-		if (automaticPayments.length > 1) {
+		for (const fundingOperation of fundingOperations)
+			resolveEvenPaymentsFunding(account, fundingOperation)
+	}
+}
+
+function assertFundingPeriodsDoNotOverlap(
+	account: Account,
+	operations: readonly FundingOperation[]
+): void {
+	for (let index = 1; index < operations.length; index++) {
+		const previous = operations[index - 1]
+		const current = operations[index]
+
+		if (current.schedule.startDate <= previous.schedule.endDate) {
 			throw new Error(
-				`Account "${account.name}" has more than one automatic payment operation.`
+				`Account "${account.name}" has overlapping funding strategies. ` +
+				`This iteration only supports non-overlapping effective periods.`
 			)
 		}
-
-		resolveAutoPayment(account, automaticPayments[0])
 	}
 }
 
-function resolveAutoPayment(account: Account, automaticPayment: Operation): void {
-	let balanceWithoutAutoPayments = account.openingBalance
-	let automaticPaymentCount = 0
+function resolveEvenPaymentsFunding(account: Account, fundingOperation: FundingOperation): void {
+	let projectedBalance = account.openingBalance
+	let fundingPaymentCount = 0
 	let requiredAmount = 0
 
 	for (const entry of account.getLedgerEntries()) {
-		const operation = entry.transaction.operation
+		const transaction = entry.transaction
+		const operation = transaction.operation
 
-		if (operation === automaticPayment) {
-			automaticPaymentCount++
+		if (transaction.chargeDate > fundingOperation.schedule.endDate)
+			break
+
+		if (operation === fundingOperation) {
+			fundingPaymentCount++
+		} else if (operation.isInterestPayment()) {
+			// Interest is excluded until funding/interest convergence is designed.
+			continue
 		} else {
-			const amount = operation.getAmount()
+			const amount = transaction.getAmount()
 
 			if (amount === null) {
 				throw new Error(
-					`Operation "${operation.name}" has an unresolved amount.`
+					`Transaction for operation "${operation.name}" has an unresolved amount.`
 				)
 			}
 
-			balanceWithoutAutoPayments += entry.direction === "inflow"
-				? amount
-				: -amount
+			projectedBalance += entry.direction === "inflow" ? amount : -amount
 		}
 
-		if (balanceWithoutAutoPayments >= 0) continue
+		if (transaction.chargeDate < fundingOperation.schedule.startDate)
+			continue
 
-		if (automaticPaymentCount === 0) {
+		if (projectedBalance >= 0) continue
+
+		if (fundingPaymentCount === 0) {
 			throw new Error(
-				`Account "${account.name}" becomes negative before its first automatic payment.`
+				`Account "${account.name}" becomes negative before the first payment ` +
+				`generated by funding strategy "${fundingOperation.name}".`
 			)
 		}
 
 		requiredAmount = Math.max(
 			requiredAmount,
-			-balanceWithoutAutoPayments / automaticPaymentCount
+			-projectedBalance / fundingPaymentCount
 		)
 	}
 
-	automaticPayment.resolveAmount(Math.ceil(requiredAmount * 100) / 100)
+	fundingOperation.resolveAmount(Math.ceil(requiredAmount * 100) / 100)
+}
+
+function resolveInterests(model: FinancialModel): void {
+	for (const account of model.accounts) {
+		const operations = model.operations.filter(
+			(operation): operation is InterestPaymentOperation =>
+				operation instanceof InterestPaymentOperation && operation.to === account.id
+		)
+
+		if (operations.length === 0) continue
+
+		if (operations.length > 1) {
+			throw new Error(
+				`Account "${account.name}" has more than one interest payment operation.`
+			)
+		}
+
+		resolveInterest(model, account, operations[0])
+	}
+}
+
+function resolveInterest(
+	model: FinancialModel,
+	account: Account,
+	interestOperation: InterestPaymentOperation
+): void {
+	const entriesByDate = new Map<number, LedgerEntry[]>()
+
+	for (const entry of account.getLedgerEntries()) {
+		const epochDay = entry.transaction.chargeDate.getEpochDay()
+		const entries = entriesByDate.get(epochDay) ?? []
+		entries.push(entry)
+		entriesByDate.set(epochDay, entries)
+	}
+
+	let balance = account.openingBalance
+	let accruedInterest = 0
+	const date = model.startDate.clone()
+
+	while (date <= model.endDate) {
+		const entries = entriesByDate.get(date.getEpochDay()) ?? []
+		const interestEntries = entries.filter(
+			entry => entry.transaction.operation === interestOperation
+		)
+
+		if (interestEntries.length > 1) {
+			throw new Error(
+				`Interest policy for account "${account.name}" generated more than one ` +
+				`payment on ${date.toJSON()}.`
+			)
+		}
+
+		/* A payment today contains interest accrued through yesterday. */
+		for (const entry of interestEntries) {
+			const amount = Math.round(accruedInterest * 100) / 100
+			entry.transaction.resolveAmount(amount)
+			balance += amount
+			accruedInterest = 0
+		}
+
+		for (const entry of entries) {
+			if (entry.transaction.operation === interestOperation) continue
+
+			const amount = entry.transaction.getAmount()
+
+			if (amount === null) {
+				throw new Error(
+					`Transaction "${entry.transaction.id}" for operation ` +
+					`"${entry.transaction.operation.name}" has an unresolved amount.`
+				)
+			}
+
+			balance += entry.direction === "inflow" ? amount : -amount
+		}
+
+		// Daily interest is calculated from the non-negative closing balance.
+		if (balance > 0)
+			accruedInterest += balance * interestOperation.rate / daysInYear(date.getYear())
+
+		date.addDays(1)
+	}
+}
+
+function validateTransactions(model: FinancialModel): void {
+	for (const account of model.accounts) {
+		for (const entry of account.getLedgerEntries()) {
+			if (entry.transaction.getAmount() !== null) continue
+
+			throw new Error(
+				`Transaction "${entry.transaction.id}" for operation ` +
+				`"${entry.transaction.operation.name}" has an unresolved amount.`
+			)
+		}
+	}
+}
+
+function daysInYear(year: number): number {
+	return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0)
+		? 366
+		: 365
 }

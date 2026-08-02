@@ -1,30 +1,30 @@
 import { LocalDate } from "@c0pt3r/local-date"
 import Operation from "./Operation"
 import ScheduleFactory from "./schedules/ScheduleFactory"
-import type { ScenarioData, OperationData, TransformData } from "./types/ScenarioTypes"
+import type { FinancialModelData, OperationData, TransformData } from "./types/FinancialModelTypes"
 
 
-export function compile(config: ScenarioData, scenarioStart: LocalDate, scenarioEnd: LocalDate): Operation[] {
+export function compile(config: FinancialModelData, modelStart: LocalDate, modelEnd: LocalDate): Operation[] {
 	const operations: Operation[] = []
 
 	for (const opData of config.operations) {
 		const operationStart = opData.schedule.startDate
 			? new LocalDate(...opData.schedule.startDate)
-			: scenarioStart.clone()
+			: modelStart.clone()
 
 		const operationEnd = opData.schedule.endDate
 			? new LocalDate(...opData.schedule.endDate)
-			: scenarioEnd.clone()
+			: modelEnd.clone()
 
-		const startDate = (operationStart < scenarioStart)
-			? scenarioStart.clone()
+		const startDate = (operationStart < modelStart)
+			? modelStart.clone()
 			: operationStart.clone()
 
-		const endDate = (operationEnd && scenarioEnd)
-			? (operationEnd < scenarioEnd)
+		const endDate = (operationEnd && modelEnd)
+			? (operationEnd < modelEnd)
 				? operationEnd.clone()
-				: scenarioEnd.clone()
-			: operationEnd?.clone() ?? scenarioEnd?.clone()
+				: modelEnd.clone()
+			: operationEnd?.clone() ?? modelEnd?.clone()
 
 		if (endDate && startDate > endDate) continue
 

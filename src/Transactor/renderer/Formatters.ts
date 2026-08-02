@@ -1,7 +1,5 @@
 import { LocalDate } from "@c0pt3r/local-date"
-import { parseDate } from "../interpreter/DateInterpreter"
-
-import type { DateRange } from "../interpreter/DateInterpreter"
+import type { DateRange } from "../queries/DateQueries"
 
 
 const monthNames = [
@@ -31,7 +29,7 @@ function monthName(month: number): string {
 }
 
 export function dateString(date: LocalDate | string): string {
-	const value = typeof date === "string" ? parseDate(date) : date
+	const value = typeof date === "string" ? LocalDate.fromISO(date) : date
 
 	if (!value)
 		return String(date)
@@ -47,7 +45,7 @@ export function periodString(period: DateRange): string {
 }
 
 export function monthTitle(date: string): string {
-	const value = parseDate(date)
+	const value = LocalDate.fromISO(date)
 
 	if (!value)
 		return date
@@ -56,7 +54,7 @@ export function monthTitle(date: string): string {
 }
 
 export function monthKey(date: string): string {
-	const value = parseDate(date)
+	const value = LocalDate.fromISO(date)
 
 	if (!value)
 		return date
@@ -65,7 +63,7 @@ export function monthKey(date: string): string {
 }
 
 export function dayString(date: string): string {
-	return String(parseDate(date)?.getDay() ?? date)
+	return String(LocalDate.fromISO(date)?.getDay() ?? date)
 }
 
 export function money(amount: number, roundUp: boolean = false): string {

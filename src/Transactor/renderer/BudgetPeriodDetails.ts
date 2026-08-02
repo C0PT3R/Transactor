@@ -1,6 +1,6 @@
 import { LitElement, css, html, nothing } from "lit"
 import { customElement, property } from "lit/decorators.js"
-import { getExpenseOperations } from "../interpreter/OperationInterpreter"
+import { getExpenseOperations } from "../queries/OperationQueries"
 import { money, periodString } from "./Formatters"
 
 import type { BudgetPeriodResult, OperationResult, TotalsResult } from "../types/ResultTypes"
@@ -13,18 +13,50 @@ export class BudgetPeriodDetails extends LitElement {
 	public period?: BudgetPeriodResult
 
 	public static styles = css`
-		:host { display: block; margin: 10px; }
-		details { display: inline-block; }
-		summary { cursor: pointer; font-weight: 700; margin-bottom: 4px; }
-		table { border-collapse: collapse; background-color: #DDD; }
-		th, td { border: 1px solid black; padding: 2px 4px; white-space: nowrap; }
-		th:first-child { text-align: left; }
-		td { text-align: right; }
-		.date-column { min-width: 180px; }
-		.amount-column { width: 120px; text-align: right; }
-		.spacer td { border-left: 1px solid black; border-right: 1px solid black; height: 1em; }
-		.summary-row { font-weight: 600; }
-		.net-row { font-weight: 700; }
+		:host {
+			display: block; margin: 10px;
+		}
+		details {
+			display: inline-block;
+		}
+		summary {
+			cursor: pointer;
+			font-weight: 700;
+			margin-bottom: 4px;
+		}
+		table {
+			border-collapse: collapse;
+			background-color: #DDD;
+		}
+		th, td {
+			border: 1px solid black;
+			padding: 2px 4px;
+			white-space: nowrap;
+		}
+		th:first-child {
+			text-align: left;
+		}
+		td {
+			text-align: right;
+		}
+		.date-column {
+			min-width: 180px;
+		}
+		.amount-column {
+			width: 120px;
+			text-align: right;
+		}
+		.spacer td {
+			border-left: 1px solid black;
+			border-right: 1px solid black;
+			height: 1em;
+		}
+		.summary-row {
+			font-weight: 600;
+		}
+		.net-row {
+			font-weight: 700;
+		}
 	`
 
 	protected render() {

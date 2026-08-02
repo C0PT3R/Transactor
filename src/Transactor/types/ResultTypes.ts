@@ -1,4 +1,5 @@
 import { TransactionDirection } from "../LedgerEntry"
+import type { OperationKind, OperationOrigin } from "../Operation"
 import { ScheduleType } from "../schedules/scheduleRegistry"
 
 
@@ -33,6 +34,8 @@ export interface OperationResult {
     readonly from?: string
     readonly to?: string
     readonly amount: number | null
+    readonly kind: OperationKind
+    readonly origin: OperationOrigin
     readonly scheduleType: ScheduleType
     readonly startDate: string
     readonly endDate: string

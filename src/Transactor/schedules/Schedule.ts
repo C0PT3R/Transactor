@@ -1,7 +1,7 @@
 import { LocalDate } from "@c0pt3r/local-date"
 import type { BusinessDayPolicy } from "../calendar/BusinessDayPolicy"
 import type { ScheduleType } from "./scheduleRegistry"
-import type { ScheduleData } from "../types/ScenarioTypes"
+import type { ScheduleData } from "../types/FinancialModelTypes"
 
 
 export default abstract class Schedule {
@@ -13,7 +13,7 @@ export default abstract class Schedule {
     public readonly businessDayPolicy: BusinessDayPolicy
 
     public constructor(data: ScheduleData, startDate: LocalDate, endDate: LocalDate) {
-        this.type = data.type
+        this.type = data.period
         this.startDate = startDate
         this.endDate = endDate
 		this.processingDelay = data.processingDelay ?? 0
