@@ -1,3 +1,6 @@
+/** Monetary values in result DTOs are integer cents. */
+export type Cents = number
+
 export type TransactionDirection = "inflow" | "outflow"
 
 export type OperationKind =
@@ -50,8 +53,8 @@ export interface BudgetPeriodResult {
 export interface AccountResult {
 	readonly id: string
 	readonly name: string
-	readonly openingBalance: number
-	readonly closingBalance: number
+	readonly openingBalance: Cents
+	readonly closingBalance: Cents
 	readonly ledgerEntryIds: readonly string[]
 }
 
@@ -61,7 +64,7 @@ export interface OperationResult {
 	readonly name: string
 	readonly from?: string
 	readonly to?: string
-	readonly amount: number | null
+	readonly amount: Cents | null
 	readonly kind: OperationKind
 	readonly origin: OperationOrigin
 	readonly scheduleType: ScheduleType
@@ -85,16 +88,16 @@ export interface LedgerEntryResult {
 	readonly id: string
 	readonly transactionId: string
 	readonly accountId: string
-	readonly amount: number
+	readonly amount: Cents
 	readonly direction: TransactionDirection
-	readonly balanceAfter: number
+	readonly balanceAfter: Cents
 }
 
 
 export interface TotalsResult {
-	readonly daily: number
-	readonly weekly: number
-	readonly biWeekly: number
-	readonly monthly: number
-	readonly yearly: number
+	readonly daily: Cents
+	readonly weekly: Cents
+	readonly biWeekly: Cents
+	readonly monthly: Cents
+	readonly yearly: Cents
 }

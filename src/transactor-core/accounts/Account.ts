@@ -2,6 +2,7 @@ import { LocalDate } from "@c0pt3r/local-date"
 import LedgerEntry from "./LedgerEntry"
 import Transaction from "../operations/Transaction"
 import IdGenerator from "../IdGenerator"
+import { currencyToCents } from "../Money"
 import InterestPolicy from "./InterestPolicy"
 import EvenPaymentsFundingStrategy from "./EvenPaymentsFundingStrategy"
 import type Operation from "../operations/Operation"
@@ -22,7 +23,7 @@ export default class Account {
 	public constructor(data: AccountData) {
 		this.id = data.id ?? IdGenerator.generate()
 		this.name = data.name
-		this.openingBalance = data.openingBalance ?? 0
+		this.openingBalance = currencyToCents(data.openingBalance ?? 0, `Opening balance for account "${this.name}"`)
 		this.balance = this.openingBalance
 		this.policies = data.interestPolicy
 			? [new InterestPolicy(data.interestPolicy)]
@@ -96,7 +97,7 @@ export default class Account {
 					break
 			}
 
-			entry.balanceAfter = Math.round(this.balance * 100) / 100
+			entry.balanceAfter = this.balance
 			entry.isCharged = true
 		}
 	}

@@ -140,7 +140,7 @@ function resolveEvenPaymentsFunding(account: Account, fundingOperation: FundingO
 		)
 	}
 
-	fundingOperation.resolveAmount(Math.ceil(requiredAmount * 100) / 100)
+	fundingOperation.resolveAmount(Math.ceil(requiredAmount))
 }
 
 function resolveInterests(model: FinancialModel): void {
@@ -195,7 +195,7 @@ function resolveInterest(
 
 		/* A payment today contains interest accrued through yesterday. */
 		for (const entry of interestEntries) {
-			const amount = Math.round(accruedInterest * 100) / 100
+			const amount = Math.round(accruedInterest)
 			entry.transaction.resolveAmount(amount)
 			balance += amount
 			accruedInterest = 0

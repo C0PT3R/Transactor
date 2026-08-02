@@ -67,9 +67,6 @@ export function dayString(date: string): string {
 }
 
 export function money(amount: number, roundUp: boolean = false): string {
-	const value = roundUp
-		? Math.ceil(amount * 100) / 100
-		: Math.round(amount * 100) / 100
-
-	return currencyFormatter.format(value)
+	const cents = roundUp ? Math.ceil(amount) : Math.round(amount)
+	return currencyFormatter.format(cents / 100)
 }

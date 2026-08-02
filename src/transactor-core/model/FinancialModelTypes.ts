@@ -13,6 +13,7 @@ export interface FinancialModelOptions {
 	readonly endDate: DateData
 }
 
+/** Monetary configuration values are expressed in major currency units. */
 export interface AccountData {
 	readonly id?: string
 	readonly name: string
@@ -36,6 +37,7 @@ export interface EvenPaymentsFundingStrategyData {
 	readonly schedule: ScheduleData
 }
 
+/** Monetary configuration values are expressed in major currency units. */
 export interface OperationData {
 	readonly id?: string
 	readonly name: string

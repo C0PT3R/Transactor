@@ -1,4 +1,5 @@
 export type {
+	Cents,
 	Result,
 	SimulationPeriodResult,
 	BudgetPeriodResult,

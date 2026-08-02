@@ -3,6 +3,7 @@ import Schedule from "../schedules/Schedule"
 import { applyBusinessDayPolicy } from "../calendar/BusinessDayPolicy"
 import { BusinessCalendar } from "../calendar/BusinessCalendar"
 import IdGenerator from "../IdGenerator"
+import { assertCents, currencyToCents } from "../Money"
 import type { OperationKind, OperationOrigin, ScheduleType } from "../../transactor-common"
 import type { OperationData } from "../model/FinancialModelTypes"
 
@@ -46,7 +47,7 @@ export default class Operation {
 		this.schedule = schedule
 		this.kind = metadata.kind ?? "standard"
 		this.origin = metadata.origin ?? "configured"
-		this.setAmount(data.amount)
+		this.setConfiguredAmount(data.amount)
 	}
 
 	/**
@@ -70,7 +71,7 @@ export default class Operation {
 		if (this.amount === null) return 0
 
 		const yearlyAmount = this.amount * Operation.PERIODS_PER_YEAR[this.schedule.type]
-		return yearlyAmount / Operation.PERIODS_PER_YEAR[period]
+		return Math.round(yearlyAmount / Operation.PERIODS_PER_YEAR[period])
 	}
 
 	public isIncome(): boolean {
@@ -105,26 +106,28 @@ export default class Operation {
 		return this.schedule.type
 	}
 
-	private setAmount(value: number | null): void {
+	private setConfiguredAmount(value: number | null): void {
 		if (value === null) {
 			this.amount = null
 			return
 		}
 
-		if (!Number.isFinite(value))
-			throw new Error(`Amount for operation "${this.name}" must be a finite number`)
-
 		if (value < 0)
 			throw new Error(`Amount for operation "${this.name}" cannot be negative`)
 
-		this.amount = value
+		this.amount = currencyToCents(value, `Amount for operation "${this.name}"`)
 	}
 
 	public resolveAmount(amount: number): void {
 		if (this.amount !== null)
 			throw new Error(`Operation "${this.name}" already has an amount`)
 
-		this.setAmount(amount)
+		assertCents(amount, `Resolved amount for operation "${this.name}"`)
+
+		if (amount < 0)
+			throw new Error(`Amount for operation "${this.name}" cannot be negative`)
+
+		this.amount = amount
 	}
 
 	public getAmount(): number | null {

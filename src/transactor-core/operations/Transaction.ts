@@ -1,4 +1,5 @@
 import { LocalDate } from "@c0pt3r/local-date"
+import { assertCents } from "../Money"
 import Operation from "./Operation"
 
 
@@ -20,8 +21,10 @@ export default class Transaction {
 		if (this.amountOverride !== null)
 			throw new Error(`Transaction already has a resolved amount.`)
 
-		if (!Number.isFinite(amount) || amount < 0)
-			throw new Error(`Amount for transaction must be a non-negative finite number.`)
+		assertCents(amount, "Resolved transaction amount")
+
+		if (amount < 0)
+			throw new Error(`Amount for transaction cannot be negative.`)
 
 		this.amountOverride = amount
 	}
