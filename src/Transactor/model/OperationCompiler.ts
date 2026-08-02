@@ -4,7 +4,7 @@ import ScheduleFactory from "../schedules/ScheduleFactory"
 import type { FinancialModelData, OperationData, TransformData } from "./FinancialModelTypes"
 
 
-export function compile(config: FinancialModelData, modelStart: LocalDate, modelEnd: LocalDate): Operation[] {
+export function compileOperations(config: FinancialModelData, modelStart: LocalDate, modelEnd: LocalDate): Operation[] {
 	const operations: Operation[] = []
 
 	for (const opData of config.operations) {

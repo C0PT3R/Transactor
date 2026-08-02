@@ -10,7 +10,7 @@ import type LedgerEntry from "./accounts/LedgerEntry"
 import type { Result } from "./results/ResultTypes"
 
 
-export function run(model: FinancialModel): Result {
+export function compile(model: FinancialModel): Result {
 	const occurrenceStart = model.startDate.clone().addDays(-7)
 
 	for (const operation of model.operations) {

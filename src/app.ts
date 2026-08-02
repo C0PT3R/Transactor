@@ -3,12 +3,17 @@ import * as Transactor from "./Transactor"
 import { getLowestBalanceTransaction, getProjectedBalance } from "./Transactor/queries/AccountQueries"
 
 const model = await Transactor.FinancialModel.fromFile("./default-model.json")
-const result = Transactor.run(model)
-
+const result = Transactor.compile(model)
 Transactor.renderInto(result, document.body)
+
+
+
 
 // Result object debugging
 // console.log(result)
+
+
+
 
 const lowestBalance = getLowestBalanceTransaction(result.accounts[0].transactions)
 

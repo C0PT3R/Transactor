@@ -4,7 +4,7 @@ import { CanadaBusinessCalendar } from "../calendar/CanadaBusinessCalendar"
 import Account from "../accounts/Account"
 import Operation from "../operations/Operation"
 import FinancialModelLoader from "./FinancialModelLoader"
-import { compile } from "./Compiler"
+import { compileOperations } from "./OperationCompiler"
 import type { FinancialModelData } from "./FinancialModelTypes"
 
 
@@ -29,7 +29,7 @@ export default class FinancialModel {
 		this.endDate = LocalDate.fromISO(modelData.options.endDate)
 		this.accounts = modelData.accounts.map(data => new Account(data))
 
-		const configuredOperations = compile(
+		const configuredOperations = compileOperations(
 			modelData,
 			this.startDate,
 			this.endDate
