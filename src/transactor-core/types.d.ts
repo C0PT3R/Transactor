@@ -1,1 +1,0 @@
-declare type printer_t = (content: string) => void
