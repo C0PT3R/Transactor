@@ -1,7 +1,7 @@
 import { LitElement, css, html, nothing } from "lit"
 import { customElement, property } from "lit/decorators.js"
 import { dateString, money } from "./Formatters"
-import { getAccountLedger } from "../queries/ResultQueries"
+import ResultInterpreter from "../interpreter/ResultInterpreter"
 import "./TransactionLedger"
 import "./AccountBalanceChart"
 
@@ -169,7 +169,7 @@ export class AccountDetails extends LitElement {
 		if (!this.result)
 			return nothing
 
-		const ledger = getAccountLedger(this.result, this.account.id)
+		const ledger = ResultInterpreter.for(this.result).getAccountLedger(this.account.id)
 		const change = this.account.closingBalance - this.account.openingBalance
 		const lowest = this.getLowestBalance()
 		const current = this.getCurrentProjectedBalance()
@@ -244,7 +244,7 @@ export class AccountDetails extends LitElement {
 
 		if (!this.result || !this.account) return { balance, date }
 
-		for (const entry of getAccountLedger(this.result, this.account.id)) {
+		for (const entry of ResultInterpreter.for(this.result).getAccountLedger(this.account.id)) {
 			if (entry.ledgerEntry.balanceAfter < balance) {
 				balance = entry.ledgerEntry.balanceAfter
 				date = entry.transaction.chargedDate
@@ -267,7 +267,7 @@ export class AccountDetails extends LitElement {
 
 		if (!this.result) return undefined
 
-		for (const entry of getAccountLedger(this.result, this.account.id)) {
+		for (const entry of ResultInterpreter.for(this.result).getAccountLedger(this.account.id)) {
 			if (entry.transaction.chargedDate > today) break
 			balance = entry.ledgerEntry.balanceAfter
 		}

@@ -2,7 +2,6 @@ export type {
 	Cents,
 	Result,
 	SimulationPeriodResult,
-	BudgetPeriodResult,
 	OperationResult,
 	AccountResult,
 	TransactionResult,

@@ -8,7 +8,6 @@ import Totals from "./Totals"
 
 import type {
 	Result,
-	BudgetPeriodResult,
 	OperationResult,
 	AccountResult,
 	TransactionResult,
@@ -164,7 +163,6 @@ export function build(
 
 	return {
 		period: buildSimulationPeriod(startDate, endDate),
-		periods: buildBudgetPeriods(startDate, endDate, operations),
 		accounts: accounts.map(account => buildAccount(account, context)),
 		operations: operations.map(operation => buildOperation(operation, context)),
 		transactions: transactions.map(transaction => buildTransaction(transaction, context)),
@@ -172,61 +170,3 @@ export function build(
 	}
 }
 
-function buildBudgetPeriods(simulationStart: LocalDate, simulationEnd: LocalDate, operations: readonly Operation[]): BudgetPeriodResult[] {
-	const boundaries = collectPeriodBoundaries(simulationStart, simulationEnd, operations)
-
-	return boundaries.map((periodStart, index) => {
-		const nextStart = boundaries[index + 1]
-		const periodEnd = nextStart ? nextStart.clone().addDays(-1) : simulationEnd.clone()
-
-		const activeOperations = operations.filter(operation =>
-			operation.schedule.startDate <= periodStart &&
-			operation.schedule.endDate >= periodStart
-		)
-
-		const inflow = Totals.fromOperations(
-			activeOperations.filter(operation => operation.isIncome())
-		)
-
-		const outflow = Totals.fromOperations(
-			activeOperations.filter(operation => operation.isExpense())
-		)
-
-		return {
-			startDate: periodStart.toJSON(),
-			endDate: periodEnd.toJSON(),
-			operationIds: activeOperations.map(operation => operation.id),
-			inflow: buildTotals(inflow),
-			outflow: buildTotals(outflow),
-			net: buildTotals(inflow.subtract(outflow))
-		}
-	})
-}
-
-function collectPeriodBoundaries(simulationStart: LocalDate, simulationEnd: LocalDate, operations: readonly Operation[]): LocalDate[] {
-	const boundaries = new Map<number, LocalDate>()
-
-	const addBoundary = (date: LocalDate): void => {
-		if (!date.isBetween(simulationStart, simulationEnd))
-			return
-
-		boundaries.set(date.getEpochDay(), date.clone())
-	}
-
-	addBoundary(simulationStart)
-
-	for (const operation of operations) {
-		const operationStart = operation.schedule.startDate
-		const operationEnd = operation.schedule.endDate
-
-		if (operationEnd < simulationStart || operationStart > simulationEnd)
-			continue
-
-		addBoundary((operationStart < simulationStart) ? simulationStart : operationStart)
-
-		if (operationEnd < simulationEnd)
-			addBoundary(operationEnd.clone().addDays(1))
-	}
-
-	return [...boundaries.values()].toSorted((a, b) => a.getEpochDay() - b.getEpochDay())
-}

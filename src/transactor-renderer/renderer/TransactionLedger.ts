@@ -2,7 +2,7 @@ import { LitElement, css, html, nothing } from "lit"
 import { customElement, property } from "lit/decorators.js"
 import { dateString, dayString, money, monthKey, monthTitle } from "./Formatters"
 
-import type { AccountLedgerEntry } from "../queries/ResultQueries"
+import type { AccountLedgerEntry } from "../interpreter"
 
 function entriesByMonth(entries: readonly AccountLedgerEntry[]): Map<string, AccountLedgerEntry[]> {
 	const months = new Map<string, AccountLedgerEntry[]>()

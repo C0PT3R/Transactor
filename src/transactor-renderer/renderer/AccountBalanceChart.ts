@@ -1,7 +1,7 @@
 import { LitElement, css, html, nothing, svg } from "lit"
 import { customElement, property, state } from "lit/decorators.js"
 import { dateString, money } from "./Formatters"
-import { getAccountLedger } from "../queries/ResultQueries"
+import ResultInterpreter from "../interpreter/ResultInterpreter"
 
 import type { AccountResult, Result } from "../../transactor-common"
 
@@ -123,7 +123,7 @@ export class AccountBalanceChart extends LitElement {
 
 	private getPoints(account: AccountResult, result: Result): BalancePoint[] {
 		const points: BalancePoint[] = []
-		const ledger = getAccountLedger(result, account.id)
+		const ledger = ResultInterpreter.for(result).getAccountLedger(account.id)
 		const firstTransactionDate = ledger[0]?.transaction.chargedDate
 		const openingDate = this.startDate || firstTransactionDate
 

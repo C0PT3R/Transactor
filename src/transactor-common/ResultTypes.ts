@@ -22,7 +22,6 @@ export type ScheduleType =
 
 export interface Result {
 	readonly period: SimulationPeriodResult
-	readonly periods: readonly BudgetPeriodResult[]
 	readonly accounts: readonly AccountResult[]
 	readonly operations: readonly OperationResult[]
 	readonly transactions: readonly TransactionResult[]
@@ -33,20 +32,6 @@ export interface Result {
 export interface SimulationPeriodResult {
 	readonly startDate: string
 	readonly endDate: string
-}
-
-
-/**
- * Presentation-oriented interval during which the active compiled
- * operations do not change.
- */
-export interface BudgetPeriodResult {
-	readonly startDate: string
-	readonly endDate: string
-	readonly operationIds: readonly string[]
-	readonly inflow: TotalsResult
-	readonly outflow: TotalsResult
-	readonly net: TotalsResult
 }
 
 

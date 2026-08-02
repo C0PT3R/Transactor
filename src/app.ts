@@ -7,4 +7,4 @@ const result = Transactor.compile(model)
 Renderer.renderInto(result, document.body)
 
 // Result object debugging
-// console.log(result)
+console.log(result)

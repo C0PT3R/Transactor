@@ -1,5 +1,5 @@
 import { LocalDate } from "@c0pt3r/local-date"
-import type { DateRange } from "../queries/DateQueries"
+import type { DateRange } from "../interpreter"
 
 
 const monthNames = [

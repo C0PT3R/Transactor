@@ -1,10 +1,9 @@
 import { LitElement, css, html, nothing } from "lit"
 import { customElement, property } from "lit/decorators.js"
-import { isExpense, isIncome } from "../queries/OperationQueries"
-import { getChargedOperationTotals } from "../queries/ResultQueries"
+import ResultInterpreter from "../interpreter/ResultInterpreter"
 import { money, periodString } from "./Formatters"
 
-import type { OperationChargedTotal } from "../queries/ResultQueries"
+import type { OperationChargedTotal } from "../interpreter"
 import type { Result } from "../../transactor-common"
 
 
@@ -57,15 +56,16 @@ export class SimulationTransactionTotals extends LitElement {
 		if (!this.result)
 			return nothing
 
-		const totals = getChargedOperationTotals(this.result)
+		const interpreter = ResultInterpreter.for(this.result)
+		const totals = interpreter.getChargedOperationTotals()
 
 		if (totals.length === 0)
 			return html`<p class="empty-message">Aucune transaction chargée.</p>`
 
 		const inflow = totals.reduce((total, entry) =>
-			isIncome(entry.operation) ? total + entry.total : total, 0)
+			interpreter.isIncome(entry.operation) ? total + entry.total : total, 0)
 		const outflow = totals.reduce((total, entry) =>
-			isExpense(entry.operation) ? total + entry.total : total, 0)
+			interpreter.isExpense(entry.operation) ? total + entry.total : total, 0)
 
 		return html`
 			<table>
@@ -94,7 +94,7 @@ export class SimulationTransactionTotals extends LitElement {
 			<tr title=${operation.id}>
 				<th>${operation.name}</th>
 				<td>${periodString(operation)}</td>
-				<td>${isIncome(operation) ? "Entrée" : "Sortie"}</td>
+				<td>${ResultInterpreter.for(this.result!).isIncome(operation) ? "Entrée" : "Sortie"}</td>
 				<td class="amount-column">${money(entry.total)}</td>
 			</tr>
 		`

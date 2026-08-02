@@ -1,16 +1,17 @@
 import { LitElement, css, html, nothing } from "lit"
 import { customElement, property } from "lit/decorators.js"
-import { getExpenseOperations } from "../queries/OperationQueries"
+import ResultInterpreter from "../interpreter/ResultInterpreter"
 import { money, periodString } from "./Formatters"
 
-import type { BudgetPeriodResult, OperationResult, Result, TotalsResult } from "../../transactor-common"
+import type { OperationResult, Result, TotalsResult } from "../../transactor-common"
+import type { BudgetPeriod } from "../interpreter"
 
 
 @customElement("budget-period-details")
 export class BudgetPeriodDetails extends LitElement {
 
 	@property({ attribute: false })
-	public period?: BudgetPeriodResult
+	public period?: BudgetPeriod
 
 	@property({ attribute: false })
 	public result?: Result
@@ -69,8 +70,8 @@ export class BudgetPeriodDetails extends LitElement {
 		`
 	}
 
-	private renderTable(period: BudgetPeriodResult) {
-		const expenses = getExpenseOperations(this.result!, period)
+	private renderTable(period: BudgetPeriod) {
+		const expenses = ResultInterpreter.for(this.result!).getExpenseOperations(period)
 
 		return html`
 			<table>

@@ -1,14 +1,14 @@
 import { LitElement, css, html, nothing } from "lit"
 import { customElement, property, state } from "lit/decorators.js"
 import { dateString, money } from "./Formatters"
-import { getAccountLedger } from "../queries/ResultQueries"
+import ResultInterpreter from "../interpreter/ResultInterpreter"
 import "./SimulationTransactionTotals"
 import "./BudgetPeriodDetails"
 import "./AccountDetails"
 import "./TransactionLedger"
 
 import type { AccountResult, Result } from "../../transactor-common"
-import type { AccountLedgerEntry } from "../queries/ResultQueries"
+import type { AccountLedgerEntry } from "../interpreter"
 
 type View = "overview" | "accounts" | "operations" | "transactions" | "calendar"
 
@@ -248,14 +248,14 @@ export class BudgetReport extends LitElement {
 	}
 
 	private renderOperations() {
-		return html`<div class="panel">${this.result!.periods.length ? this.result!.periods.map(period => html`<budget-period-details .period=${period} .result=${this.result}></budget-period-details>`) : html`<p class="empty-message">Aucune période budgétaire.</p>`}</div>`
+		return html`<div class="panel">${ResultInterpreter.for(this.result!).getBudgetPeriods().length ? ResultInterpreter.for(this.result!).getBudgetPeriods().map(period => html`<budget-period-details .period=${period} .result=${this.result}></budget-period-details>`) : html`<p class="empty-message">Aucune période budgétaire.</p>`}</div>`
 	}
 
 	private renderTransactions() {
 		return html`
 			<div class="panel"><simulation-transaction-totals .result=${this.result}></simulation-transaction-totals></div>
 			${this.result!.accounts.map(account => {
-				const entries = getAccountLedger(this.result!, account.id)
+				const entries = ResultInterpreter.for(this.result!).getAccountLedger(account.id)
 				return html`<section class="section"><div class="section-header"><div><h3 class="section-title">${account.name}</h3><p class="section-description">${entries.length} écriture${entries.length === 1 ? "" : "s"}</p></div></div><transaction-ledger .entries=${entries}></transaction-ledger></section>`
 			})}
 		`
@@ -273,7 +273,7 @@ export class BudgetReport extends LitElement {
 
 	private calendarEntries(): AccountLedgerEntry[] {
 		return this.result!.accounts
-			.flatMap(account => getAccountLedger(this.result!, account.id))
+			.flatMap(account => ResultInterpreter.for(this.result!).getAccountLedger(account.id))
 			.toSorted((a, b) => a.transaction.chargedDate.localeCompare(b.transaction.chargedDate))
 	}
 
