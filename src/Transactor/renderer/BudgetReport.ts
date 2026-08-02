@@ -5,7 +5,7 @@ import "./SimulationTransactionTotals"
 import "./BudgetPeriodDetails"
 import "./AccountDetails"
 
-import type { Result } from "../types/ResultTypes"
+import type { Result } from "../results/ResultTypes"
 
 
 @customElement("budget-report")

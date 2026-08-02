@@ -1,6 +1,6 @@
 import type { LocalDate } from "@c0pt3r/local-date"
-import type Account from "../Account"
-import type Operation from "../Operation"
+import type Account from "./Account"
+import type Operation from "../operations/Operation"
 
 
 export interface AccountBehaviorContext {

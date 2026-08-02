@@ -1,6 +1,6 @@
 import { LocalDate } from "@c0pt3r/local-date"
 import Operation from "./Operation"
-import IdGenerator from "./IdGenerator"
+import IdGenerator from "../IdGenerator"
 
 
 export default class Transaction {

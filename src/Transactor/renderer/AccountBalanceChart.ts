@@ -2,7 +2,7 @@ import { LitElement, css, html, nothing, svg } from "lit"
 import { customElement, property, state } from "lit/decorators.js"
 import { dateString, money } from "./Formatters"
 
-import type { AccountResult } from "../types/ResultTypes"
+import type { AccountResult } from "../results/ResultTypes"
 
 interface BalancePoint {
 	readonly date: string

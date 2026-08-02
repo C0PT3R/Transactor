@@ -1,7 +1,7 @@
 import { LocalDate } from "@c0pt3r/local-date"
-import Operation from "./Operation"
-import ScheduleFactory from "./schedules/ScheduleFactory"
-import type { FinancialModelData, OperationData, TransformData } from "./types/FinancialModelTypes"
+import Operation from "../operations/Operation"
+import ScheduleFactory from "../schedules/ScheduleFactory"
+import type { FinancialModelData, OperationData, TransformData } from "./FinancialModelTypes"
 
 
 export function compile(config: FinancialModelData, modelStart: LocalDate, modelEnd: LocalDate): Operation[] {

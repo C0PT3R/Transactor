@@ -4,7 +4,7 @@ import { money } from "./Formatters"
 import "./TransactionLedger"
 import "./AccountBalanceChart"
 
-import type { AccountResult } from "../types/ResultTypes"
+import type { AccountResult } from "../results/ResultTypes"
 
 
 @customElement("account-details")

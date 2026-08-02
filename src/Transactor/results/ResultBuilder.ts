@@ -1,7 +1,7 @@
 import { LocalDate } from "@c0pt3r/local-date"
-import Account from "./Account"
-import LedgerEntry from "./LedgerEntry"
-import Operation from "./Operation"
+import Account from "../accounts/Account"
+import LedgerEntry from "../accounts/LedgerEntry"
+import Operation from "../operations/Operation"
 import Totals from "./Totals"
 
 import type {
@@ -12,7 +12,7 @@ import type {
 	TransactionResult,
 	TotalsResult,
 	SimulationPeriodResult
-} from "./types/ResultTypes"
+} from "./ResultTypes"
 
 
 function buildTotals(totals: Totals): TotalsResult {

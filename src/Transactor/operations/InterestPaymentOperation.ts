@@ -1,6 +1,6 @@
-import Operation from "../Operation"
+import Operation from "./Operation"
 import Schedule from "../schedules/Schedule"
-import type { OperationData } from "../types/FinancialModelTypes"
+import type { OperationData } from "../model/FinancialModelTypes"
 
 
 export default class InterestPaymentOperation extends Operation {

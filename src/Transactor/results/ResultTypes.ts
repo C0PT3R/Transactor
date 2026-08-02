@@ -1,5 +1,5 @@
-import { TransactionDirection } from "../LedgerEntry"
-import type { OperationKind, OperationOrigin } from "../Operation"
+import { TransactionDirection } from "../accounts/LedgerEntry"
+import type { OperationKind, OperationOrigin } from "../operations/Operation"
 import { ScheduleType } from "../schedules/scheduleRegistry"
 
 

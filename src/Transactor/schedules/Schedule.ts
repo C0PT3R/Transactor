@@ -1,7 +1,7 @@
 import { LocalDate } from "@c0pt3r/local-date"
 import type { BusinessDayPolicy } from "../calendar/BusinessDayPolicy"
 import type { ScheduleType } from "./scheduleRegistry"
-import type { ScheduleData } from "../types/FinancialModelTypes"
+import type { ScheduleData } from "../model/FinancialModelTypes"
 
 
 export default abstract class Schedule {

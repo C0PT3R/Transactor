@@ -3,7 +3,7 @@ import { dateString } from "./Formatters"
 import "./BudgetReport"
 
 import type { LocalDate } from "@c0pt3r/local-date"
-import type { Result } from "../types/ResultTypes"
+import type { Result } from "../results/ResultTypes"
 
 
 type HtmlTarget = HTMLElement | DocumentFragment

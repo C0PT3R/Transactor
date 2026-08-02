@@ -1,4 +1,4 @@
-import Transaction from "./Transaction"
+import Transaction from "../operations/Transaction"
 
 export type TransactionDirection = "inflow" | "outflow"
 

@@ -1,6 +1,6 @@
 import { LocalDate } from "@c0pt3r/local-date"
 import { registry } from "./scheduleRegistry"
-import type { ScheduleData } from "../types/FinancialModelTypes"
+import type { ScheduleData } from "../model/FinancialModelTypes"
 
 
 export default class ScheduleFactory {

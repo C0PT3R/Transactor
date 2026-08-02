@@ -1,13 +1,13 @@
 import { LocalDate } from "@c0pt3r/local-date"
-import Account from "./Account"
-import FinancialModel from "./FinancialModel"
+import Account from "./accounts/Account"
+import FinancialModel from "./model/FinancialModel"
 import InterestPaymentOperation from "./operations/InterestPaymentOperation"
 import FundingOperation from "./operations/FundingOperation"
-import Operation from "./Operation"
-import Transaction from "./Transaction"
-import { build } from "./ResultBuilder"
-import type LedgerEntry from "./LedgerEntry"
-import type { Result } from "./types/ResultTypes"
+import Operation from "./operations/Operation"
+import Transaction from "./operations/Transaction"
+import { build } from "./results/ResultBuilder"
+import type LedgerEntry from "./accounts/LedgerEntry"
+import type { Result } from "./results/ResultTypes"
 
 
 export function run(model: FinancialModel): Result {

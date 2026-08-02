@@ -1,10 +1,10 @@
 import { LocalDate } from "@c0pt3r/local-date"
 import FundingOperation from "../operations/FundingOperation"
 import ScheduleFactory from "../schedules/ScheduleFactory"
-import type Account from "../Account"
-import type Operation from "../Operation"
-import type { AccountBehaviorContext, FundingStrategy } from "../behaviors/AccountBehavior"
-import type { EvenPaymentsFundingStrategyData } from "../types/FinancialModelTypes"
+import type Account from "./Account"
+import type Operation from "../operations/Operation"
+import type { AccountBehaviorContext, FundingStrategy } from "./AccountBehavior"
+import type { EvenPaymentsFundingStrategyData } from "../model/FinancialModelTypes"
 
 
 export default class EvenPaymentsFundingStrategy implements FundingStrategy {

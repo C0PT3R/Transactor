@@ -1,11 +1,11 @@
 import { LocalDate } from "@c0pt3r/local-date"
-import { BusinessCalendar } from "./calendar/BusinessCalendar"
-import { CanadaBusinessCalendar } from "./calendar/CanadaBusinessCalendar"
-import Account from "./Account"
-import Operation from "./Operation"
+import { BusinessCalendar } from "../calendar/BusinessCalendar"
+import { CanadaBusinessCalendar } from "../calendar/CanadaBusinessCalendar"
+import Account from "../accounts/Account"
+import Operation from "../operations/Operation"
 import FinancialModelLoader from "./FinancialModelLoader"
 import { compile } from "./Compiler"
-import type { FinancialModelData } from "./types/FinancialModelTypes"
+import type { FinancialModelData } from "./FinancialModelTypes"
 
 
 /**

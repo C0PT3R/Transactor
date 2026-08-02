@@ -1,7 +1,7 @@
 import { dateDuringPeriod } from "./DateQueries"
 import { isExpense, isIncome } from "./OperationQueries"
 
-import type { BudgetPeriodResult, OperationResult, Result } from "../types/ResultTypes"
+import type { BudgetPeriodResult, OperationResult, Result } from "../results/ResultTypes"
 
 
 export interface OperationChargedTotal {

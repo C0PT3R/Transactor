@@ -2,7 +2,7 @@ import { LitElement, css, html, nothing } from "lit"
 import { customElement, property } from "lit/decorators.js"
 import { dateString, dayString, money, monthKey, monthTitle } from "./Formatters"
 
-import type { TransactionResult } from "../types/ResultTypes"
+import type { TransactionResult } from "../results/ResultTypes"
 
 
 function transactionsByMonth(entries: readonly TransactionResult[]): Map<string, TransactionResult[]> {

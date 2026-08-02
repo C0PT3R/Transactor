@@ -5,7 +5,7 @@ import { getChargedOperationTotals } from "../queries/ResultQueries"
 import { money, periodString } from "./Formatters"
 
 import type { OperationChargedTotal } from "../queries/ResultQueries"
-import type { Result } from "../types/ResultTypes"
+import type { Result } from "../results/ResultTypes"
 
 
 @customElement("simulation-transaction-totals")

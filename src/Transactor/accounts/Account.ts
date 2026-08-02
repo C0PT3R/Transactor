@@ -1,12 +1,12 @@
 import { LocalDate } from "@c0pt3r/local-date"
 import LedgerEntry from "./LedgerEntry"
-import Transaction from "./Transaction"
-import IdGenerator from "./IdGenerator"
-import InterestPolicy from "./policies/InterestPolicy"
-import EvenPaymentsFundingStrategy from "./strategies/EvenPaymentsFundingStrategy"
-import type Operation from "./Operation"
-import type { AccountBehavior, AccountBehaviorContext, AccountPolicy, FundingStrategy } from "./behaviors/AccountBehavior"
-import type { AccountData, FundingStrategyData } from "./types/FinancialModelTypes"
+import Transaction from "../operations/Transaction"
+import IdGenerator from "../IdGenerator"
+import InterestPolicy from "./InterestPolicy"
+import EvenPaymentsFundingStrategy from "./EvenPaymentsFundingStrategy"
+import type Operation from "../operations/Operation"
+import type { AccountBehavior, AccountBehaviorContext, AccountPolicy, FundingStrategy } from "./AccountBehavior"
+import type { AccountData, FundingStrategyData } from "../model/FinancialModelTypes"
 
 
 export default class Account {

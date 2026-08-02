@@ -1,10 +1,10 @@
 import { LocalDate } from "@c0pt3r/local-date"
-import Schedule from "./schedules/Schedule"
-import { applyBusinessDayPolicy } from "./calendar/BusinessDayPolicy"
-import { BusinessCalendar } from "./calendar/BusinessCalendar"
-import IdGenerator from "./IdGenerator"
-import type { ScheduleType } from "./schedules/scheduleRegistry"
-import type { OperationData } from "./types/FinancialModelTypes"
+import Schedule from "../schedules/Schedule"
+import { applyBusinessDayPolicy } from "../calendar/BusinessDayPolicy"
+import { BusinessCalendar } from "../calendar/BusinessCalendar"
+import IdGenerator from "../IdGenerator"
+import type { ScheduleType } from "../schedules/scheduleRegistry"
+import type { OperationData } from "../model/FinancialModelTypes"
 
 
 export type OperationKind = "standard" | "interestPayment" | "funding"

@@ -1,4 +1,4 @@
-import type { FinancialModelData } from "./types/FinancialModelTypes"
+import type { FinancialModelData } from "./FinancialModelTypes"
 
 
 export default class FinancialModelLoader {
