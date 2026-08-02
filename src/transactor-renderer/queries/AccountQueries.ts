@@ -1,4 +1,4 @@
-import type { Result, TransactionResult } from "../results/ResultTypes"
+import type { Result, TransactionResult } from "../../transactor-common"
 
 
 export function getProjectedBalance(result: Result, accountId: string, date: string): number {

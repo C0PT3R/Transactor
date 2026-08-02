@@ -1,13 +1,12 @@
 import { LocalDate } from "@c0pt3r/local-date"
-import * as Transactor from "./Transactor"
-import { getLowestBalanceTransaction, getProjectedBalance } from "./Transactor/queries/AccountQueries"
+import * as Transactor from "./transactor-core"
+import { renderInto } from "./transactor-renderer"
+import { getLowestBalanceTransaction, getProjectedBalance } from "./transactor-renderer/queries/AccountQueries"
+
 
 const model = await Transactor.FinancialModel.fromFile("./default-model.json")
 const result = Transactor.compile(model)
-Transactor.renderInto(result, document.body)
-
-
-
+renderInto(result, document.body)
 
 // Result object debugging
 // console.log(result)

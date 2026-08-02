@@ -3,7 +3,7 @@ import { customElement, property } from "lit/decorators.js"
 import { getExpenseOperations } from "../queries/OperationQueries"
 import { money, periodString } from "./Formatters"
 
-import type { BudgetPeriodResult, OperationResult, TotalsResult } from "../results/ResultTypes"
+import type { BudgetPeriodResult, OperationResult, TotalsResult } from "../../transactor-common"
 
 
 @customElement("budget-period-details")

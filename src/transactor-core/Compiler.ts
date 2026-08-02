@@ -5,9 +5,9 @@ import InterestPaymentOperation from "./operations/InterestPaymentOperation"
 import FundingOperation from "./operations/FundingOperation"
 import Operation from "./operations/Operation"
 import Transaction from "./operations/Transaction"
-import { build } from "./results/ResultBuilder"
+import { build } from "./result/ResultBuilder"
 import type LedgerEntry from "./accounts/LedgerEntry"
-import type { Result } from "./results/ResultTypes"
+import type { Result } from "../transactor-common"
 
 
 export function compile(model: FinancialModel): Result {

@@ -1,5 +1,5 @@
 import Operation from "../operations/Operation"
-import type { ScheduleType } from "../schedules/scheduleRegistry"
+import type { ScheduleType } from "../../transactor-common"
 
 
 export default class Totals {

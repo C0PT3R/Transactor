@@ -1,6 +1,6 @@
 import { LocalDate } from "@c0pt3r/local-date"
 import type { BusinessDayPolicy } from "../calendar/BusinessDayPolicy"
-import type { ScheduleType } from "./scheduleRegistry"
+import type { ScheduleType } from "../../transactor-common"
 import type { ScheduleData } from "../model/FinancialModelTypes"
 
 

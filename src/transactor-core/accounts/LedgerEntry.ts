@@ -1,6 +1,5 @@
 import Transaction from "../operations/Transaction"
-
-export type TransactionDirection = "inflow" | "outflow"
+import type { TransactionDirection } from "../../transactor-common"
 
 
 export default class LedgerEntry {

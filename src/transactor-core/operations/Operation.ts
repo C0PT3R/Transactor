@@ -3,12 +3,9 @@ import Schedule from "../schedules/Schedule"
 import { applyBusinessDayPolicy } from "../calendar/BusinessDayPolicy"
 import { BusinessCalendar } from "../calendar/BusinessCalendar"
 import IdGenerator from "../IdGenerator"
-import type { ScheduleType } from "../schedules/scheduleRegistry"
+import type { OperationKind, OperationOrigin, ScheduleType } from "../../transactor-common"
 import type { OperationData } from "../model/FinancialModelTypes"
 
-
-export type OperationKind = "standard" | "interestPayment" | "funding"
-export type OperationOrigin = "configured" | "generated"
 
 export interface OperationMetadata {
 	readonly kind?: OperationKind

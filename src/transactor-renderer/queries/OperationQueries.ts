@@ -1,4 +1,4 @@
-import type { BudgetPeriodResult, OperationResult } from "../results/ResultTypes"
+import type { BudgetPeriodResult, OperationResult } from "../../transactor-common"
 
 
 export function isIncome(operation: OperationResult): boolean {

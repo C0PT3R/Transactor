@@ -12,7 +12,7 @@ import type {
 	TransactionResult,
 	TotalsResult,
 	SimulationPeriodResult
-} from "./ResultTypes"
+} from "../../transactor-common"
 
 
 function buildTotals(totals: Totals): TotalsResult {

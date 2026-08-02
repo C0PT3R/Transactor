@@ -1,5 +1,5 @@
 import type { BusinessDayPolicy } from "../calendar/BusinessDayPolicy"
-import type { ScheduleType } from "../schedules/scheduleRegistry"
+import type { ScheduleType } from "../../transactor-common"
 
 
 export interface FinancialModelData {
