@@ -61,7 +61,7 @@ export default class Operation {
 		)
 
 		return applyBusinessDayPolicy(
-			adjustedDate.addDays(this.schedule.processingDelay),
+			adjustedDate.plusDays(this.schedule.processingDelay),
 			this.schedule.businessDayPolicy,
 			calendar
 		)

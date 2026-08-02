@@ -7,7 +7,7 @@
     "esbuild": "^0.28.1"
   },
   "dependencies": {
-    "@c0pt3r/local-date": "^0.1.5",
+    "@c0pt3r/local-date": "^1.0.0",
     "lit": "^3.3.3"
   }
 }

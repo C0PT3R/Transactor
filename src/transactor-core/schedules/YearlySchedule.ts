@@ -21,7 +21,7 @@ export default class YearlySchedule extends Schedule {
     public matches(date: LocalDate): boolean {
         if (!this.isActive(date)) return false
         
-        return (date.getMonth() === this.month && date.getDay() === this.day)
+        return (date.month === this.month && date.day === this.day)
     }
     
     public *occurrences(from: LocalDate, to: LocalDate): Generator<LocalDate> {
@@ -39,9 +39,9 @@ export default class YearlySchedule extends Schedule {
 
         if (rangeStart > rangeEnd) return
 
-        for (let year = rangeStart.getYear(); year <= rangeEnd.getYear(); year++) {
-            const month = new LocalDate(year, this.month)
-            const lastDayOfMonth = month.getLastDayOfMonth()
+        for (let year = rangeStart.year; year <= rangeEnd.year; year++) {
+            const month = new LocalDate(year, this.month, 1)
+            const lastDayOfMonth = month.daysInMonth
 
             const targetDay = this.day === -1
                 ? lastDayOfMonth

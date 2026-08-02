@@ -7,7 +7,7 @@
 		{
 			"id": "bills",
 			"name": "Factures",
-			"openingBalance": 577.27,
+			"openingBalance": 577.39,
 			"interestPolicy": {
 				"rate": 0.0175
 			},

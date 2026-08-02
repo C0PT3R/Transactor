@@ -19,15 +19,15 @@ export default class WeeklySchedule extends Schedule {
     public matches(date: LocalDate): boolean {
         if (!this.isActive(date)) return false
         
-        return date.getEpochDay() % 7 === this.day
+        return date.dayOfWeek % 7 === this.day
     }
 
     public *occurrences(from: LocalDate, to: LocalDate): Generator<LocalDate> {
-        const rangeStart = (
+        let rangeStart = (
             this.startDate && this.startDate > from
                 ? this.startDate
                 : from
-        ).clone()
+        )
 
         const rangeEnd = (
             this.endDate && this.endDate < to
@@ -37,19 +37,17 @@ export default class WeeklySchedule extends Schedule {
 
         if (rangeStart > rangeEnd) return
 
-        const currentDay = (
-            (rangeStart.getEpochDay() % 7) + 7
-        ) % 7
+        const currentDay = rangeStart.dayOfWeek % 7
 
         const offset = (
             (this.day - currentDay) + 7
         ) % 7
 
-        rangeStart.addDays(offset)
+        rangeStart = rangeStart.plusDays(offset)
 
         while (rangeStart <= rangeEnd) {
-            yield rangeStart.clone()
-            rangeStart.addDays(7)
+            yield rangeStart
+            rangeStart = rangeStart.plusDays(7)
         }
     }
 

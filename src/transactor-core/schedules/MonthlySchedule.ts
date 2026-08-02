@@ -19,27 +19,27 @@ export default class MonthlySchedule extends Schedule {
     public matches(date: LocalDate): boolean {
         if (!this.isActive(date)) return false
 
-        const lastDayOfMonth = date.getLastDayOfMonth()
+        const lastDayOfMonth = date.daysInMonth
 
         const targetDay = this.day === -1
             ? lastDayOfMonth
             : Math.min(this.day, lastDayOfMonth)
 
-        return date.getDay() === targetDay
+        return date.day === targetDay
     }
 
     public *occurrences(from: LocalDate, to: LocalDate): Generator<LocalDate> {
         if (from > to) return
 
-        let year = from.getYear()
-        let month = from.getMonth()
+        let year = from.year
+        let month = from.month
 
         while (
-            year < to.getYear() ||
-            (year === to.getYear() && month <= to.getMonth())
+            year < to.year ||
+            (year === to.year && month <= to.month)
         ) {
-            const firstDayOfMonth = new LocalDate(year, month)
-            const lastDayOfMonth = firstDayOfMonth.getLastDayOfMonth()
+            const firstDayOfMonth = new LocalDate(year, month, 1)
+            const lastDayOfMonth = firstDayOfMonth.daysInMonth
 
             const targetDay = this.day === -1
                 ? lastDayOfMonth

@@ -10,21 +10,19 @@ export function compileOperations(config: FinancialModelData, modelStart: LocalD
 	for (const opData of config.operations) {
 		const operationStart = opData.schedule.startDate
 			? LocalDate.fromISO(opData.schedule.startDate)
-			: modelStart.clone()
+			: modelStart
 
 		const operationEnd = opData.schedule.endDate
 			? LocalDate.fromISO(opData.schedule.endDate)
-			: modelEnd.clone()
+			: modelEnd
 
 		const startDate = (operationStart < modelStart)
-			? modelStart.clone()
-			: operationStart.clone()
+			? modelStart
+			: operationStart
 
-		const endDate = (operationEnd && modelEnd)
-			? (operationEnd < modelEnd)
-				? operationEnd.clone()
-				: modelEnd.clone()
-			: operationEnd?.clone() ?? modelEnd?.clone()
+		const endDate = operationEnd < modelEnd
+			? operationEnd
+			: modelEnd
 
 		if (endDate && startDate > endDate) continue
 
@@ -50,7 +48,7 @@ export function compileOperations(config: FinancialModelData, modelStart: LocalD
 		 * It may change while versions are being generated.
 		 */
 		let currentData = structuredClone(opData)
-		let currentStart = startDate.clone()
+		let currentStart = startDate
 		let transformIndex = 0
 
 		/*
@@ -70,7 +68,7 @@ export function compileOperations(config: FinancialModelData, modelStart: LocalD
 
 			if (endDate && date > endDate) break
 
-			const currentEnd = date.clone().addDays(-1)
+			const currentEnd = date.plusDays(-1)
 
 			if (currentStart <= currentEnd) {
 				operations.push(
@@ -80,7 +78,7 @@ export function compileOperations(config: FinancialModelData, modelStart: LocalD
 
 			currentData = applyTransform(currentData, transform)
 
-			currentStart = date.clone()
+			currentStart = date
 		}
 
 		if (!endDate || currentStart <= endDate) {

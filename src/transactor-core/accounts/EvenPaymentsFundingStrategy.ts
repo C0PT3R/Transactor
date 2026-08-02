@@ -19,18 +19,18 @@ export default class EvenPaymentsFundingStrategy implements FundingStrategy {
 	public generateOperations(account: Account, context: AccountBehaviorContext): readonly Operation[] {
 		const configuredStart = this.data.schedule.startDate
 			? LocalDate.fromISO(this.data.schedule.startDate)
-			: context.startDate.clone()
+			: context.startDate
 
 		const configuredEnd = this.data.schedule.endDate
 			? LocalDate.fromISO(this.data.schedule.endDate)
-			: context.endDate.clone()
+			: context.endDate
 
 		const startDate = configuredStart < context.startDate
-			? context.startDate.clone()
+			? context.startDate
 			: configuredStart
 
 		const endDate = configuredEnd > context.endDate
-			? context.endDate.clone()
+			? context.endDate
 			: configuredEnd
 
 		if (startDate > endDate) return []

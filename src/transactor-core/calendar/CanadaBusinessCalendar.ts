@@ -5,9 +5,9 @@ import { BusinessCalendar } from "./BusinessCalendar"
 export class CanadaBusinessCalendar extends BusinessCalendar {
 
     protected isHoliday(date: LocalDate): boolean {
-        const y = date.getYear()
-        const m = date.getMonth()
-        const d = date.getDay()
+        const y = date.year
+        const m = date.month
+        const d = date.day
 
         // New Year's Day
         if (m === 1 && d === 1)
@@ -42,25 +42,24 @@ export class CanadaBusinessCalendar extends BusinessCalendar {
 
     private isFirstMondayOfSeptember(date: LocalDate): boolean {
         return (
-            date.getMonth() === 9 &&
-            date.getWeekDay() === 1 &&
-            date.getDay() <= 7
+            date.month === 9 &&
+            date.dayOfWeek === 1 &&
+            date.day <= 7
         )
     }
 
     private isSecondMondayOfOctober(date: LocalDate): boolean {
         return (
-            date.getMonth() === 10 &&
-            date.getWeekDay() === 1 &&
-            date.getDay() >= 8 &&
-            date.getDay() <= 14
+            date.month === 10 &&
+            date.dayOfWeek === 1 &&
+            date.day >= 8 &&
+            date.day <= 14
         )
     }
 
     private isGoodFriday(date: LocalDate): boolean {
-        const easter = this.calculateEaster(date.getYear())
-        easter.addDays(-2)
-        return easter == date
+        const goodFriday = this.calculateEaster(date.year).plusDays(-2)
+        return date.equals(goodFriday)
     }
 
     /**

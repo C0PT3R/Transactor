@@ -24,7 +24,7 @@ export default class FinancialModel {
 		// The model starts tomorrow if not provided.
 		this.startDate = modelData.options.startDate
 			? LocalDate.fromISO(modelData.options.startDate)
-			: new LocalDate().addDays(1)
+			: LocalDate.today().plusDays(1)
 
 		this.endDate = LocalDate.fromISO(modelData.options.endDate)
 		this.accounts = modelData.accounts.map(data => new Account(data))

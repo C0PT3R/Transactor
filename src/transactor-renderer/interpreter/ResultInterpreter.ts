@@ -203,7 +203,7 @@ export default class ResultInterpreter {
 
 		this.budgetPeriods = boundaries.map((periodStart, index) => {
 			const nextStart = boundaries[index + 1]
-			const periodEnd = nextStart ? nextStart.clone().addDays(-1) : end.clone()
+			const periodEnd = nextStart ? nextStart.plusDays(-1) : end
 			const startDate = periodStart.toJSON()
 
 			const activeOperations = this.result.operations.filter(operation =>
@@ -258,7 +258,7 @@ export default class ResultInterpreter {
 			if (!date.isBetween(simulationStart, simulationEnd))
 				return
 
-			boundaries.set(date.getEpochDay(), date.clone())
+			boundaries.set(date.epochDay, date)
 		}
 
 		addBoundary(simulationStart)
@@ -276,9 +276,9 @@ export default class ResultInterpreter {
 			addBoundary(operationStart < simulationStart ? simulationStart : operationStart)
 
 			if (operationEnd < simulationEnd)
-				addBoundary(operationEnd.clone().addDays(1))
+				addBoundary(operationEnd.plusDays(1))
 		}
 
-		return [...boundaries.values()].toSorted((a, b) => a.getEpochDay() - b.getEpochDay())
+		return [...boundaries.values()].toSorted((a, b) => a.epochDay - b.epochDay)
 	}
 }

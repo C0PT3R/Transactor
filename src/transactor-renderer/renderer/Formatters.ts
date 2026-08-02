@@ -34,7 +34,7 @@ export function dateString(date: LocalDate | string): string {
 	if (!value)
 		return String(date)
 
-	return `${value.getDay()} ${monthName(value.getMonth())} ${value.getYear()}`
+	return `${value.day} ${monthName(value.month)} ${value.year}`
 }
 
 export function periodString(period: DateRange): string {
@@ -50,7 +50,7 @@ export function monthTitle(date: string): string {
 	if (!value)
 		return date
 
-	return `${monthName(value.getMonth())} ${value.getYear()}`
+	return `${monthName(value.month)} ${value.year}`
 }
 
 export function monthKey(date: string): string {
@@ -59,11 +59,11 @@ export function monthKey(date: string): string {
 	if (!value)
 		return date
 
-	return `${value.getYear()}-${String(value.getMonth()).padStart(2, "0")}`
+	return `${value.year}-${String(value.month).padStart(2, "0")}`
 }
 
 export function dayString(date: string): string {
-	return String(LocalDate.fromISO(date)?.getDay() ?? date)
+	return String(LocalDate.fromISO(date)?.day ?? date)
 }
 
 export function money(amount: number, roundUp: boolean = false): string {

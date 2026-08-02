@@ -19,15 +19,15 @@ export default class BiweeklySchedule extends Schedule {
     public matches(date: LocalDate): boolean {
         if (!this.isActive(date)) return false
         
-        return date.getEpochDay() % 14 === this.day
+        return floorMod(date.epochDay - 3, 14) === this.day
     }
     
     public *occurrences(from: LocalDate, to: LocalDate): Generator<LocalDate> {
-        const rangeStart = (
+        let rangeStart = (
             this.startDate && this.startDate > from
                 ? this.startDate
                 : from
-        ).clone()
+        )
 
         const rangeEnd = (
             this.endDate && this.endDate < to
@@ -37,20 +37,22 @@ export default class BiweeklySchedule extends Schedule {
 
         if (rangeStart > rangeEnd) return
 
-        const currentDay = (
-            (rangeStart.getEpochDay() % 14) + 14
-        ) % 14
+        const currentDay = floorMod(rangeStart.epochDay - 3, 14)
 
         const offset = (
             (this.day - currentDay) + 14
         ) % 14
 
-        rangeStart.addDays(offset)
+        rangeStart = rangeStart.plusDays(offset)
 
         while (rangeStart <= rangeEnd) {
-            yield rangeStart.clone()
-            rangeStart.addDays(14)
+            yield rangeStart
+            rangeStart = rangeStart.plusDays(14)
         }
     }
 
+}
+
+function floorMod(value: number, divisor: number): number {
+    return ((value % divisor) + divisor) % divisor
 }

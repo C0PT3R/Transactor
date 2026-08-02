@@ -36,18 +36,18 @@ export default class InterestPolicy implements AccountPolicy {
 		 */
 		const configuredStart = scheduleData.startDate
 			? LocalDate.fromISO(scheduleData.startDate)
-			: context.startDate.clone()
+			: context.startDate
 
 		const configuredEnd = scheduleData.endDate
 			? LocalDate.fromISO(scheduleData.endDate)
-			: context.endDate.clone()
+			: context.endDate
 
 		const startDate = configuredStart < context.startDate
-			? context.startDate.clone()
+			? context.startDate
 			: configuredStart
 
 		const endDate = configuredEnd > context.endDate
-			? context.endDate.clone()
+			? context.endDate
 			: configuredEnd
 
 		if (startDate > endDate) return []

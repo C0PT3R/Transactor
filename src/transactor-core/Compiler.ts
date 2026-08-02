@@ -11,7 +11,7 @@ import type { Result } from "../transactor-common"
 
 
 export function compile(model: FinancialModel): Result {
-	const occurrenceStart = model.startDate.clone().addDays(-7)
+	const occurrenceStart = model.startDate.plusDays(-7)
 
 	for (const operation of model.operations) {
 		populateLedgers(model, operation, occurrenceStart, model.endDate)
@@ -42,7 +42,7 @@ function populateLedgers(
 ): void {
 	for (const scheduledDate of operation.schedule.occurrences(from, to)) {
 		const chargeDate = operation.resolveTransactionDate(
-			scheduledDate.clone(),
+			scheduledDate,
 			model.calendar
 		)
 
@@ -66,7 +66,7 @@ function resolveFunding(model: FinancialModel): void {
 				operation instanceof FundingOperation && operation.to === account.id
 			)
 			.toSorted((a, b) =>
-				a.schedule.startDate.getEpochDay() - b.schedule.startDate.getEpochDay()
+				a.schedule.startDate.epochDay - b.schedule.startDate.epochDay
 			)
 
 		assertFundingPeriodsDoNotOverlap(account, fundingOperations)
@@ -170,7 +170,7 @@ function resolveInterest(
 	const entriesByDate = new Map<number, LedgerEntry[]>()
 
 	for (const entry of account.getLedgerEntries()) {
-		const epochDay = entry.transaction.chargeDate.getEpochDay()
+		const epochDay = entry.transaction.chargeDate.epochDay
 		const entries = entriesByDate.get(epochDay) ?? []
 		entries.push(entry)
 		entriesByDate.set(epochDay, entries)
@@ -178,10 +178,10 @@ function resolveInterest(
 
 	let balance = account.openingBalance
 	let accruedInterest = 0
-	const date = model.startDate.clone()
+	let date = model.startDate
 
 	while (date <= model.endDate) {
-		const entries = entriesByDate.get(date.getEpochDay()) ?? []
+		const entries = entriesByDate.get(date.epochDay) ?? []
 		const interestEntries = entries.filter(
 			entry => entry.transaction.operation === interestOperation
 		)
@@ -217,9 +217,9 @@ function resolveInterest(
 
 		// Daily interest is calculated from the non-negative closing balance.
 		if (balance > 0)
-			accruedInterest += balance * interestOperation.rate / daysInYear(date.getYear())
+			accruedInterest += balance * interestOperation.rate / daysInYear(date.year)
 
-		date.addDays(1)
+		date = date.plusDays(1)
 	}
 }
 
