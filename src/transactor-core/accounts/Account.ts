@@ -4,11 +4,11 @@ import Transaction from "../operations/Transaction"
 import IdGenerator from "../IdGenerator"
 import { currencyToCents } from "../Money"
 import InterestPolicy from "./InterestPolicy"
-import EvenPaymentsFundingStrategy from "./EvenPaymentsFundingStrategy"
+import FeePolicy from "./FeePolicy"
 import type Operation from "../operations/Operation"
-import type { AccountBehavior, AccountBehaviorContext, AccountPolicy, FundingStrategy } from "./AccountBehavior"
-import type { AccountData, FundingStrategyData } from "../model/FinancialModelTypes"
-
+import type AccountPolicy from "./AccountPolicy"
+import type { AccountPolicyContext } from "./AccountPolicy"
+import type { AccountData, AccountPolicyData, InterestPolicyData } from "../model/FinancialModelTypes"
 
 export default class Account {
 
@@ -16,7 +16,6 @@ export default class Account {
 	public readonly name: string
 	public readonly openingBalance: number
 	public readonly policies: readonly AccountPolicy[]
-	public readonly fundingStrategies: readonly FundingStrategy[]
 	private readonly ledger: LedgerEntry[] = []
 	private balance: number
 
@@ -25,20 +24,19 @@ export default class Account {
 		this.name = data.name
 		this.openingBalance = currencyToCents(data.openingBalance ?? 0, `Opening balance for account "${this.name}"`)
 		this.balance = this.openingBalance
-		this.policies = data.interestPolicy
-			? [new InterestPolicy(data.interestPolicy)]
+
+		const legacyInterestPolicy: InterestPolicyData[] = data.interestPolicy
+			? [{ kind: "interest", ...data.interestPolicy }]
 			: []
-		this.fundingStrategies = (data.fundingStrategies ?? [])
-			.map(createFundingStrategy)
+
+		this.policies = [
+			...(data.policies ?? []),
+			...legacyInterestPolicy
+		].map(createAccountPolicy)
 	}
 
-	public generateOperations(context: AccountBehaviorContext): readonly Operation[] {
-		const behaviors: readonly AccountBehavior[] = [
-			...this.policies,
-			...this.fundingStrategies
-		]
-
-		return behaviors.flatMap(behavior => behavior.generateOperations(this, context))
+	public generatePolicyOperations(context: AccountPolicyContext): readonly Operation[] {
+		return this.policies.flatMap(policy => policy.generateOperations(this, context))
 	}
 
 	public getLedgerEntries(): readonly LedgerEntry[] {
@@ -114,12 +112,13 @@ export default class Account {
 
 		return result
 	}
-
 }
 
-function createFundingStrategy(data: FundingStrategyData): FundingStrategy {
+function createAccountPolicy(data: AccountPolicyData): AccountPolicy {
 	switch (data.kind) {
-		case "evenPayments":
-			return new EvenPaymentsFundingStrategy(data)
+		case "interest":
+			return new InterestPolicy(data)
+		case "fee":
+			return new FeePolicy(data)
 	}
 }

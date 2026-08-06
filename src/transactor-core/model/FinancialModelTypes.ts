@@ -1,11 +1,11 @@
 import type { BusinessDayPolicy } from "../calendar/BusinessDayPolicy"
 import type { ScheduleType } from "../../transactor-common"
 
-
 export interface FinancialModelData {
 	readonly options: FinancialModelOptions
 	readonly accounts: readonly AccountData[]
 	readonly operations: readonly OperationData[]
+	readonly strategies?: readonly PlanningStrategyData[]
 }
 
 export interface FinancialModelOptions {
@@ -18,21 +18,34 @@ export interface AccountData {
 	readonly id?: string
 	readonly name: string
 	readonly openingBalance?: number
-	readonly interestPolicy?: InterestPolicyData
-	readonly fundingStrategies?: readonly FundingStrategyData[]
+	readonly policies?: readonly AccountPolicyData[]
+
+	/** @deprecated Use policies with kind "interest". */
+	readonly interestPolicy?: Omit<InterestPolicyData, "kind">
 }
 
+export type AccountPolicyData = InterestPolicyData | FeePolicyData
+
 export interface InterestPolicyData {
+	readonly kind: "interest"
 	readonly rate: number
 	readonly calculationPeriod?: "daily"
 	readonly paymentSchedule?: Partial<ScheduleData>
 }
 
-export type FundingStrategyData = EvenPaymentsFundingStrategyData
+export interface FeePolicyData {
+	readonly kind: "fee"
+	readonly name?: string
+	readonly amount: number
+	readonly schedule: ScheduleData
+}
 
-export interface EvenPaymentsFundingStrategyData {
+export type PlanningStrategyData = EvenPaymentsStrategyData
+
+export interface EvenPaymentsStrategyData {
 	readonly kind: "evenPayments"
 	readonly name?: string
+	readonly target: string
 	readonly from?: string
 	readonly schedule: ScheduleData
 }

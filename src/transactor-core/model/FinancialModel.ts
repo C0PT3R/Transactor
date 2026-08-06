@@ -3,10 +3,11 @@ import { BusinessCalendar } from "../calendar/BusinessCalendar"
 import { CanadaBusinessCalendar } from "../calendar/CanadaBusinessCalendar"
 import Account from "../accounts/Account"
 import Operation from "../operations/Operation"
+import EvenPaymentsStrategy from "../strategies/EvenPaymentsStrategy"
 import FinancialModelLoader from "./FinancialModelLoader"
 import { compileOperations } from "./OperationCompiler"
-import type { FinancialModelData } from "./FinancialModelTypes"
-
+import type PlanningStrategy from "../strategies/PlanningStrategy"
+import type { FinancialModelData, PlanningStrategyData } from "./FinancialModelTypes"
 
 /**
  * Mutable working model used while compiling the declarative configuration
@@ -19,6 +20,7 @@ export default class FinancialModel {
 	public readonly calendar: BusinessCalendar
 	public readonly operations: readonly Operation[]
 	public readonly accounts: readonly Account[]
+	public readonly strategies: readonly PlanningStrategy[]
 
 	public constructor(modelData: FinancialModelData) {
 		// The model starts tomorrow if not provided.
@@ -28,6 +30,7 @@ export default class FinancialModel {
 
 		this.endDate = LocalDate.fromISO(modelData.options.endDate)
 		this.accounts = modelData.accounts.map(data => new Account(data))
+		this.strategies = (modelData.strategies ?? []).map(createPlanningStrategy)
 
 		const configuredOperations = compileOperations(
 			modelData,
@@ -35,16 +38,24 @@ export default class FinancialModel {
 			this.endDate
 		)
 
-		const behaviorContext = {
+		const generationContext = {
 			startDate: this.startDate,
 			endDate: this.endDate
 		}
 
-		const generatedOperations = this.accounts.flatMap(
-			account => account.generateOperations(behaviorContext)
+		const policyOperations = this.accounts.flatMap(
+			account => account.generatePolicyOperations(generationContext)
 		)
 
-		this.operations = [...configuredOperations, ...generatedOperations]
+		const strategyOperations = this.strategies.flatMap(
+			strategy => strategy.generateOperations(generationContext)
+		)
+
+		this.operations = [
+			...configuredOperations,
+			...policyOperations,
+			...strategyOperations
+		]
 		this.calendar = new CanadaBusinessCalendar()
 	}
 
@@ -61,5 +72,11 @@ export default class FinancialModel {
 
 		return account
 	}
+}
 
+function createPlanningStrategy(data: PlanningStrategyData): PlanningStrategy {
+	switch (data.kind) {
+		case "evenPayments":
+			return new EvenPaymentsStrategy(data)
+	}
 }

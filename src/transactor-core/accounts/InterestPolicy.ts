@@ -3,7 +3,8 @@ import InterestPaymentOperation from "../operations/InterestPaymentOperation"
 import ScheduleFactory from "../schedules/ScheduleFactory"
 import type Account from "./Account"
 import type Operation from "../operations/Operation"
-import type { AccountBehaviorContext, AccountPolicy } from "./AccountBehavior"
+import type AccountPolicy from "./AccountPolicy"
+import type { AccountPolicyContext } from "./AccountPolicy"
 import type { InterestPolicyData, ScheduleData } from "../model/FinancialModelTypes"
 
 
@@ -16,7 +17,7 @@ export default class InterestPolicy implements AccountPolicy {
 		this.data = data
 	}
 
-	public generateOperations(account: Account, context: AccountBehaviorContext): readonly Operation[] {
+	public generateOperations(account: Account, context: AccountPolicyContext): readonly Operation[] {
 		if ((this.data.calculationPeriod ?? "daily") !== "daily") {
 			throw new Error(
 				`Account "${account.name}" uses an unsupported interest calculation period.`

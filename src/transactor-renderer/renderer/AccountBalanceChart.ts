@@ -302,13 +302,6 @@ export class AccountBalanceChart extends LitElement {
 								`
 								: nothing
 							}
-
-							<circle
-								class="point ${point.balance < 0 ? "negative" : ""} ${isActive ? "active" : ""}"
-								cx=${point.x}
-								cy=${point.y}
-								r=${isActive ? 6 : 4}
-							></circle>
 						</g>
 					`
 				})}
