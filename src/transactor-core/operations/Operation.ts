@@ -24,7 +24,7 @@ export default class Operation {
 	public readonly origin: OperationOrigin
 	private amount: number | null = null
 
-	private static readonly PERIODS_PER_YEAR: Record<ScheduleType, number> = {
+	private static readonly PERIODS_PER_YEAR: Record<Exclude<ScheduleType, "once">, number> = {
 		daily: 365.25,
 		weekly: 52,
 		biWeekly: 26,
@@ -67,11 +67,15 @@ export default class Operation {
 		)
 	}
 
-	public convertTo(period: ScheduleType): number {
-		if (this.amount === null) return 0
+	public convertTo(period: Exclude<ScheduleType, "once">): number {
+		if (this.amount === null || this.schedule.type === "once") return 0
 
 		const yearlyAmount = this.amount * Operation.PERIODS_PER_YEAR[this.schedule.type]
 		return Math.round(yearlyAmount / Operation.PERIODS_PER_YEAR[period])
+	}
+
+	public static periodsPerYear(period: Exclude<ScheduleType, "once">): number {
+		return Operation.PERIODS_PER_YEAR[period]
 	}
 
 	public isIncome(): boolean {
@@ -128,6 +132,24 @@ export default class Operation {
 			throw new Error(`Amount for operation "${this.name}" cannot be negative`)
 
 		this.amount = amount
+	}
+
+	/**
+	 * Updates an amount that belongs to generated compiler state. This is used by
+	 * iterative resolvers whose values may change until the simulation converges.
+	 */
+	public updateResolvedAmount(amount: number): number {
+		if (!this.isGenerated())
+			throw new Error(`Only generated operations can have their resolved amount updated.`)
+
+		assertCents(amount, `Resolved amount for operation "${this.name}"`)
+
+		if (amount < 0)
+			throw new Error(`Amount for operation "${this.name}" cannot be negative`)
+
+		const previous = this.amount ?? 0
+		this.amount = amount
+		return Math.abs(amount - previous)
 	}
 
 	public getAmount(): number | null {

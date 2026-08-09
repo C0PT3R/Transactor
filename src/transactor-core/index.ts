@@ -4,6 +4,7 @@ export { compile } from "./Compiler"
 export type {
 	Result,
 	SimulationPeriodResult,
+	ModelPeriodResult,
 	OperationResult,
 	AccountResult,
 	TransactionResult,

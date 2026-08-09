@@ -29,4 +29,16 @@ export default class Transaction {
 		this.amountOverride = amount
 	}
 
+	/** Updates compiler-derived transaction state and returns the absolute change. */
+	public updateResolvedAmount(amount: number): number {
+		assertCents(amount, "Resolved transaction amount")
+
+		if (amount < 0)
+			throw new Error(`Amount for transaction cannot be negative.`)
+
+		const previous = this.amountOverride ?? 0
+		this.amountOverride = amount
+		return Math.abs(amount - previous)
+	}
+
 }

@@ -13,6 +13,7 @@ export type OperationOrigin =
 	| "generated"
 
 export type ScheduleType =
+	| "once"
 	| "daily"
 	| "weekly"
 	| "biWeekly"
@@ -22,6 +23,7 @@ export type ScheduleType =
 
 export interface Result {
 	readonly period: SimulationPeriodResult
+	readonly modelPeriods: readonly ModelPeriodResult[]
 	readonly accounts: readonly AccountResult[]
 	readonly operations: readonly OperationResult[]
 	readonly transactions: readonly TransactionResult[]
@@ -34,6 +36,16 @@ export interface SimulationPeriodResult {
 	readonly endDate: string
 }
 
+
+export interface ModelPeriodResult {
+	readonly startDate: string
+	readonly endDate: string
+	readonly dayCount: number
+	readonly operationIds: readonly string[]
+	readonly inflow: TotalsResult
+	readonly outflow: TotalsResult
+	readonly net: TotalsResult
+}
 
 export interface AccountResult {
 	readonly id: string

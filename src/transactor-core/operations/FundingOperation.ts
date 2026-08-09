@@ -5,7 +5,13 @@ import type { OperationData } from "../model/FinancialModelTypes"
 
 export default class FundingOperation extends Operation {
 
-	public constructor(name: string, accountId: string, from: string | undefined, schedule: Schedule) {
+	public constructor(
+		name: string,
+		accountId: string,
+		from: string | undefined,
+		schedule: Schedule,
+		public readonly minimumBalance: number
+	) {
 		const data: OperationData = {
 			name,
 			amount: null,
@@ -19,5 +25,4 @@ export default class FundingOperation extends Operation {
 			origin: "generated"
 		})
 	}
-
 }

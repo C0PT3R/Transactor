@@ -41,7 +41,7 @@ export default class Totals {
 		return result
 	}
 
-	public get(period: ScheduleType): number {
+	public get(period: Exclude<ScheduleType, "once">): number {
 		return this[period]
 	}
 

@@ -248,7 +248,7 @@ export class BudgetReport extends LitElement {
 	}
 
 	private renderOperations() {
-		return html`<div class="panel">${ResultInterpreter.for(this.result!).getBudgetPeriods().length ? ResultInterpreter.for(this.result!).getBudgetPeriods().map(period => html`<budget-period-details .period=${period} .result=${this.result}></budget-period-details>`) : html`<p class="empty-message">Aucune période budgétaire.</p>`}</div>`
+		return html`<div class="panel">${ResultInterpreter.for(this.result!).getModelPeriods().length ? ResultInterpreter.for(this.result!).getModelPeriods().map(period => html`<budget-period-details .period=${period} .result=${this.result}></budget-period-details>`) : html`<p class="empty-message">Aucune période budgétaire.</p>`}</div>`
 	}
 
 	private renderTransactions() {

@@ -48,6 +48,8 @@ export interface EvenPaymentsStrategyData {
 	readonly target: string
 	readonly from?: string
 	readonly schedule: ScheduleData
+	readonly adjustInitialBalance?: boolean
+	readonly minimumBalance?: number
 }
 
 /** Monetary configuration values are expressed in major currency units. */
@@ -72,6 +74,7 @@ export interface TransformData {
 
 export interface ScheduleData {
 	readonly period: ScheduleType
+	readonly date?: DateData
 	readonly day?: number
 	readonly month?: number
 	readonly year?: number

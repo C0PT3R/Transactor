@@ -8,13 +8,17 @@ export function compileOperations(config: FinancialModelData, modelStart: LocalD
 	const operations: Operation[] = []
 
 	for (const opData of config.operations) {
-		const operationStart = opData.schedule.startDate
-			? LocalDate.fromISO(opData.schedule.startDate)
-			: modelStart
+		const onceDate = opData.schedule.period === "once"
+			? requireOnceDate(opData)
+			: null
 
-		const operationEnd = opData.schedule.endDate
+		const operationStart = onceDate ?? (opData.schedule.startDate
+			? LocalDate.fromISO(opData.schedule.startDate)
+			: modelStart)
+
+		const operationEnd = onceDate ?? (opData.schedule.endDate
 			? LocalDate.fromISO(opData.schedule.endDate)
-			: modelEnd
+			: modelEnd)
 
 		const startDate = (operationStart < modelStart)
 			? modelStart
@@ -108,4 +112,12 @@ function applyTransform(data: OperationData, transform: TransformData): Operatio
 function createOperation(data: OperationData, startDate: LocalDate, endDate: LocalDate): Operation {
 	const schedule = ScheduleFactory.create(data.schedule, startDate, endDate)
 	return new Operation(data, schedule)
+}
+
+
+function requireOnceDate(data: OperationData): LocalDate {
+	if (!data.schedule.date)
+		throw new Error(`Operation "${data.name}" uses a once schedule without a date.`)
+
+	return LocalDate.fromISO(data.schedule.date)
 }

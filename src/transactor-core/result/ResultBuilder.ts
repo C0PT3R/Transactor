@@ -5,6 +5,7 @@ import Operation from "../operations/Operation"
 import Transaction from "../operations/Transaction"
 import IdGenerator from "../IdGenerator"
 import Totals from "./Totals"
+import { buildModelPeriods } from "../model/ModelPeriod"
 
 import type {
 	Result,
@@ -13,7 +14,8 @@ import type {
 	TransactionResult,
 	LedgerEntryResult,
 	TotalsResult,
-	SimulationPeriodResult
+	SimulationPeriodResult,
+	ModelPeriodResult
 } from "../../transactor-common"
 
 interface EntryContext {
@@ -46,6 +48,27 @@ function buildSimulationPeriod(startDate: LocalDate, endDate: LocalDate): Simula
 	}
 }
 
+function buildModelPeriodResults(
+	startDate: LocalDate,
+	endDate: LocalDate,
+	operations: readonly Operation[]
+): readonly ModelPeriodResult[] {
+	return buildModelPeriods(startDate, endDate, operations).map(period => {
+		const inflow = Totals.fromOperations(period.operations.filter(operation => operation.isIncome()))
+		const outflow = Totals.fromOperations(period.operations.filter(operation => operation.isExpense()))
+
+		return {
+			startDate: period.startDate.toJSON(),
+			endDate: period.endDate.toJSON(),
+			dayCount: period.dayCount,
+			operationIds: period.operations.map(operation => operation.id),
+			inflow: buildTotals(inflow),
+			outflow: buildTotals(outflow),
+			net: buildTotals(inflow.subtract(outflow))
+		}
+	})
+}
+
 function createBuildContext(accounts: readonly Account[]): BuildContext {
 	const entryContexts: EntryContext[] = []
 	const transactionIds = new Map<Transaction, string>()
@@ -55,6 +78,13 @@ function createBuildContext(accounts: readonly Account[]): BuildContext {
 
 	for (const account of accounts) {
 		for (const entry of account.getChargedLedgerEntries()) {
+			const amount = entry.transaction.getAmount()
+
+			// Zero-value transactions remain valid compiler state but are omitted
+			// from the public result because they have no financial effect.
+			if (amount === 0)
+				continue
+
 			const context = { account, entry }
 			entryContexts.push(context)
 			ledgerEntryIds.set(entry, IdGenerator.generate())
@@ -102,15 +132,20 @@ function buildOperation(operation: Operation, context: BuildContext): OperationR
 	}
 }
 
+function visibleChargedEntries(account: Account): readonly LedgerEntry[] {
+	return account.getChargedLedgerEntries().filter(entry => entry.transaction.getAmount() !== 0)
+}
+
 function buildAccount(account: Account, context: BuildContext): AccountResult {
-	const entries = account.getChargedLedgerEntries()
+	const visibleEntries = visibleChargedEntries(account)
+	const allEntries = account.getChargedLedgerEntries()
 
 	return {
 		id: account.id,
 		name: account.name,
 		openingBalance: account.openingBalance,
-		closingBalance: entries.at(-1)?.balanceAfter ?? account.openingBalance,
-		ledgerEntryIds: entries.map(entry => requireLedgerEntryId(context, entry))
+		closingBalance: allEntries.at(-1)?.balanceAfter ?? account.openingBalance,
+		ledgerEntryIds: visibleEntries.map(entry => requireLedgerEntryId(context, entry))
 	}
 }
 
@@ -163,10 +198,10 @@ export function build(
 
 	return {
 		period: buildSimulationPeriod(startDate, endDate),
+		modelPeriods: buildModelPeriodResults(startDate, endDate, operations),
 		accounts: accounts.map(account => buildAccount(account, context)),
 		operations: operations.map(operation => buildOperation(operation, context)),
 		transactions: transactions.map(transaction => buildTransaction(transaction, context)),
 		ledgerEntries: context.entryContexts.map(entry => buildLedgerEntry(entry, context))
 	}
 }
-

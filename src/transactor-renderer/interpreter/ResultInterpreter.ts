@@ -5,7 +5,7 @@ import type {
 	LedgerEntryResult,
 	OperationResult,
 	Result,
-	TotalsResult,
+	ModelPeriodResult,
 	TransactionResult
 } from "../../transactor-common"
 
@@ -14,12 +14,6 @@ export interface DateRange {
 	readonly endDate: string
 }
 
-export interface BudgetPeriod extends DateRange {
-	readonly operationIds: readonly string[]
-	readonly inflow: TotalsResult
-	readonly outflow: TotalsResult
-	readonly net: TotalsResult
-}
 
 export interface OperationChargedTotal {
 	readonly operation: OperationResult
@@ -33,33 +27,6 @@ export interface AccountLedgerEntry {
 	readonly operation: OperationResult
 }
 
-const zeroTotals = (): TotalsResult => ({
-	daily: 0,
-	weekly: 0,
-	biWeekly: 0,
-	monthly: 0,
-	yearly: 0
-})
-
-function addTotals(left: TotalsResult, right: TotalsResult): TotalsResult {
-	return {
-		daily: left.daily + right.daily,
-		weekly: left.weekly + right.weekly,
-		biWeekly: left.biWeekly + right.biWeekly,
-		monthly: left.monthly + right.monthly,
-		yearly: left.yearly + right.yearly
-	}
-}
-
-function subtractTotals(left: TotalsResult, right: TotalsResult): TotalsResult {
-	return {
-		daily: left.daily - right.daily,
-		weekly: left.weekly - right.weekly,
-		biWeekly: left.biWeekly - right.biWeekly,
-		monthly: left.monthly - right.monthly,
-		yearly: left.yearly - right.yearly
-	}
-}
 
 export default class ResultInterpreter {
 	private static readonly instances = new WeakMap<Result, ResultInterpreter>()
@@ -79,7 +46,6 @@ export default class ResultInterpreter {
 	private readonly operationsById: ReadonlyMap<string, OperationResult>
 	private readonly transactionsById: ReadonlyMap<string, TransactionResult>
 	private readonly ledgerEntriesById: ReadonlyMap<string, LedgerEntryResult>
-	private budgetPeriods?: readonly BudgetPeriod[]
 
 	private constructor(public readonly result: Result) {
 		this.accountsById = new Map(result.accounts.map(account => [account.id, account]))
@@ -189,44 +155,11 @@ export default class ResultInterpreter {
 		)
 	}
 
-	public getBudgetPeriods(): readonly BudgetPeriod[] {
-		if (this.budgetPeriods)
-			return this.budgetPeriods
-
-		const start = LocalDate.fromISO(this.result.period.startDate)
-		const end = LocalDate.fromISO(this.result.period.endDate)
-
-		if (!start || !end)
-			throw new Error("The result contains an invalid simulation period.")
-
-		const boundaries = this.collectPeriodBoundaries(start, end)
-
-		this.budgetPeriods = boundaries.map((periodStart, index) => {
-			const nextStart = boundaries[index + 1]
-			const periodEnd = nextStart ? nextStart.plusDays(-1) : end
-			const startDate = periodStart.toJSON()
-
-			const activeOperations = this.result.operations.filter(operation =>
-				operation.startDate <= startDate && operation.endDate >= startDate
-			)
-
-			const inflow = this.sumOperationTotals(activeOperations.filter(operation => this.isIncome(operation)))
-			const outflow = this.sumOperationTotals(activeOperations.filter(operation => this.isExpense(operation)))
-
-			return {
-				startDate,
-				endDate: periodEnd.toJSON(),
-				operationIds: activeOperations.map(operation => operation.id),
-				inflow,
-				outflow,
-				net: subtractTotals(inflow, outflow)
-			}
-		})
-
-		return this.budgetPeriods
+	public getModelPeriods(): readonly ModelPeriodResult[] {
+		return this.result.modelPeriods
 	}
 
-	public getExpenseOperations(period: BudgetPeriod): readonly OperationResult[] {
+	public getExpenseOperations(period: ModelPeriodResult): readonly OperationResult[] {
 		const operationIds = new Set(period.operationIds)
 
 		return this.result.operations
@@ -244,41 +177,4 @@ export default class ResultInterpreter {
 			value.isBetween(startDate, endDate)
 	}
 
-	private sumOperationTotals(operations: readonly OperationResult[]): TotalsResult {
-		return operations.reduce(
-			(totals, operation) => addTotals(totals, operation.totals),
-			zeroTotals()
-		)
-	}
-
-	private collectPeriodBoundaries(simulationStart: LocalDate, simulationEnd: LocalDate): LocalDate[] {
-		const boundaries = new Map<number, LocalDate>()
-
-		const addBoundary = (date: LocalDate): void => {
-			if (!date.isBetween(simulationStart, simulationEnd))
-				return
-
-			boundaries.set(date.epochDay, date)
-		}
-
-		addBoundary(simulationStart)
-
-		for (const operation of this.result.operations) {
-			const operationStart = LocalDate.fromISO(operation.startDate)
-			const operationEnd = LocalDate.fromISO(operation.endDate)
-
-			if (!operationStart || !operationEnd)
-				throw new Error(`Operation "${operation.name}" contains an invalid active period.`)
-
-			if (operationEnd < simulationStart || operationStart > simulationEnd)
-				continue
-
-			addBoundary(operationStart < simulationStart ? simulationStart : operationStart)
-
-			if (operationEnd < simulationEnd)
-				addBoundary(operationEnd.plusDays(1))
-		}
-
-		return [...boundaries.values()].toSorted((a, b) => a.epochDay - b.epochDay)
-	}
 }
