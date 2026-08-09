@@ -1,7 +1,7 @@
 import { LocalDate } from "@c0pt3r/local-date"
-import Account from "../accounts/Account"
-import InterestPaymentOperation from "../operations/InterestPaymentOperation"
-import type LedgerEntry from "../accounts/LedgerEntry"
+import Account from "../../accounts/Account"
+import InterestPaymentOperation from "../../operations/InterestPaymentOperation"
+import type LedgerEntry from "../../accounts/LedgerEntry"
 import type { IterativeResolver, ResolutionResult } from "./IterativeResolver"
 import { resolutionResult } from "./IterativeResolver"
 

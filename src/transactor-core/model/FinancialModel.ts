@@ -5,7 +5,7 @@ import Account from "../accounts/Account"
 import Operation from "../operations/Operation"
 import EvenPaymentsStrategy from "../strategies/EvenPaymentsStrategy"
 import FinancialModelLoader from "./FinancialModelLoader"
-import { compileOperations } from "./OperationCompiler"
+import { compileOperations } from "../compiler/OperationCompiler"
 import type PlanningStrategy from "../strategies/PlanningStrategy"
 import type { FinancialModelData, PlanningStrategyData } from "./FinancialModelTypes"
 

@@ -1,5 +1,5 @@
 export { default as FinancialModel } from "./model/FinancialModel"
-export { compile } from "./Compiler"
+export { compile } from "./compiler/Compiler"
 
 export type {
 	Result,
