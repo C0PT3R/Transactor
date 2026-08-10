@@ -1,10 +1,10 @@
 import { LocalDate } from "@c0pt3r/local-date"
-import Operation from "../operations/Operation"
-import ScheduleFactory from "../schedules/ScheduleFactory"
-import type Account from "./Account"
+import Operation from "../../operations/Operation"
+import ScheduleFactory from "../../schedules/ScheduleFactory"
+import type Account from "../Account"
 import type AccountPolicy from "./AccountPolicy"
 import type { AccountPolicyContext } from "./AccountPolicy"
-import type { FeePolicyData } from "../model/FinancialModelTypes"
+import type { FeePolicyData } from "../../model/FinancialModelTypes"
 
 export default class FeePolicy implements AccountPolicy {
 

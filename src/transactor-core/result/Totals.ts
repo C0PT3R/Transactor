@@ -1,3 +1,4 @@
+import { LocalDate } from "@c0pt3r/local-date"
 import Operation from "../operations/Operation"
 import type { ScheduleType } from "../../transactor-common"
 
@@ -10,21 +11,21 @@ export default class Totals {
 	public monthly = 0
 	public yearly = 0
 
-	public static fromOperations(operations: Iterable<Operation>): Totals {
+	public static fromOperations(operations: Iterable<Operation>, referenceDate: LocalDate): Totals {
 		const totals = new Totals()
 
 		for (const operation of operations)
-			totals.add(operation)
+			totals.add(operation, referenceDate)
 
 		return totals
 	}
 
-	public add(operation: Operation): this {
-		this.daily += operation.convertTo("daily")
-		this.weekly += operation.convertTo("weekly")
-		this.biWeekly += operation.convertTo("biWeekly")
-		this.monthly += operation.convertTo("monthly")
-		this.yearly += operation.convertTo("yearly")
+	public add(operation: Operation, referenceDate: LocalDate): this {
+		this.daily += operation.convertTo("daily", referenceDate)
+		this.weekly += operation.convertTo("weekly", referenceDate)
+		this.biWeekly += operation.convertTo("biWeekly", referenceDate)
+		this.monthly += operation.convertTo("monthly", referenceDate)
+		this.yearly += operation.convertTo("yearly", referenceDate)
 
 		return this
 	}

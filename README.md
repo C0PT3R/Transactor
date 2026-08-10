@@ -1,133 +1,155 @@
 # Transactor
 
-> A declarative financial projection engine written in TypeScript.
+> A declarative financial simulation engine written in TypeScript, with a UI layered on top.
 
-**Transactor** is a personal project that models accounts, recurring operations, schedules and account policies to produce an immutable financial projection over time.
+Transactor models accounts, operations, schedules, account policies, and planning strategies, then compiles that model into a complete financial timeline. The engine is the product core; the current renderer is one consumer of its immutable result.
 
-Instead of manually tracking transactions in a spreadsheet, the application describes a financial system declaratively and compiles it into a complete timeline of transactions, balances and reports.
+The project began as a way to answer a simple question: **how much should be contributed regularly so that bills are always funded evenly?** It has since grown into a more general financial simulation/planning engine while keeping that original use case as an important strategy.
 
-> **⚠️ Work in Progress**
+> **Work in progress**
 >
-> This project is actively evolving. The architecture is still being refined, features are added as real-world needs arise, and breaking changes should be expected. At the moment, Transactor primarily serves my own financial planning, so some concepts are intentionally opinionated.
+> Transactor is actively evolving. The domain model and compiler architecture are becoming more explicit, and breaking changes are expected.
 
----
+## Core idea
 
-## Philosophy
+The configuration describes **what financial system should exist**. The core determines what happens over time.
 
-The goal is to describe **what** should happen rather than **how** to calculate it.
-
-A financial model is composed of:
-
-* Accounts
-* Account policies (interest, fees, ...)
-* Funding strategies
-* User-defined operations
-* Schedules
-
-The compiler expands those declarations into generated operations, transactions, ledgers and finally an immutable result.
-
-```
-JSON
-    ↓
+```text
+Declarative configuration
+        ↓
 FinancialModel
-    ↓
-Generated operations
-    ↓
-Transactions
-    ↓
-Charged accounts
-    ↓
+        ↓
+Configured + generated operations
+        ↓
+Ledger population
+        ↓
+Deterministic resolution
+        ↓
+Iterative convergence
+        ↓
+Validation + account charging
+        ↓
 Immutable Result
+        ↓
+Renderer / future editors / other consumers
 ```
 
----
+Generated operations may come from account policies or planning strategies. Interest and even-funding adjustments can depend on each other, so feedback-driven values are resolved iteratively until they are stable to monetary precision.
 
-## Current Features
+## Current domain
 
-* Declarative JSON model
-* Multiple account types
-* Flexible recurring schedules
-* Transfers between accounts
-* Account ledgers
-* Immutable simulation results
-* Budget period reports
-* Interactive balance charts
-* Generated operations
-* Interest policies
-* Funding strategies (work in progress)
+A model currently contains:
 
----
+- a simulation period;
+- accounts with opening balances;
+- account policies;
+- configured operations;
+- planning strategies;
+- schedules and posting-date rules.
 
-## Project Status
+Implemented account policies include interest and fees. The implemented planning strategy is `evenPayments`.
 
-This project is **not** intended to compete with budgeting software.
+The engine supports one-time, weekly, biweekly, monthly, and yearly schedules. `daily` exists in the shared schedule type but is not currently constructible as a normal schedule.
 
-It exists because I wanted a financial model that could answer questions such as:
+## Even-payments funding
 
-* *What will my account balances look like over the next two years?*
-* *How much should I automatically transfer each week to cover irregular expenses?*
-* *How do account policies such as interest or fees affect long-term balances?*
+The even-payments strategy generates a recurring funding operation. It may also generate a signed initial balance adjustment represented internally by opposite one-time adjustment operations.
 
-As the project evolves, it is becoming less of a budgeting application and more of a small financial modeling engine.
+The strategy supports:
 
----
+- a source account;
+- a target account;
+- a recurring funding schedule;
+- an optional `minimumBalance` target;
+- optional initial-balance adjustment.
 
-## Design Principles
+The deterministic compiler first derives a recurring funding seed from the actual model periods and their durations. Annual proration uses actual calendar-year lengths through `LocalDate`; no average `365.25` year is used.
 
-Some principles that guide development:
+When initial adjustment is enabled, iterative resolution then solves the recurring payment and signed initial adjustment together with interest. The selected solution keeps the account at or above `minimumBalance` and minimizes time-weighted excess balance over the strategy lifetime.
 
-* Declarative configuration
-* Immutable results
-* Strong domain vocabulary
-* Predictable compilation pipeline
-* Minimal dependencies
-* Simplicity over premature generalization
+## Model periods
 
-Whenever possible, concepts are modeled after real financial entities rather than implementation details.
+`ModelPeriod` is a first-class core concept. It represents a contiguous portion of the simulation during which the set of active recurring operations is stable.
 
----
+Model periods are used by funding calculations and are included in the immutable result. They are not separate financial models and they are not an old-style frame hierarchy.
 
-## Current Architecture
+One-time operations do not create model-period boundaries.
 
-The source code is organized by domain.
+## Architecture
 
-```
+The current core is organized around domain concepts and compilation stages:
+
+```text
 src/
-├── accounts/
-├── model/
-├── operations/
-├── schedules/
-├── calendar/
-├── queries/
-├── renderer/
-└── results/
+├── transactor-common/
+│   └── shared result and schedule types
+│
+├── transactor-core/
+│   ├── accounts/
+│   │   └── policies/
+│   ├── compiler/
+│   │   └── resolution/
+│   ├── model/
+│   ├── operations/
+│   ├── result/
+│   ├── schedules/
+│   ├── strategies/
+│   └── calendar/
+│
+└── transactor-renderer/
+    ├── interpreter/
+    └── renderer/
 ```
 
-The project intentionally distinguishes between:
+`Compiler.ts` is intentionally an orchestration layer. Deterministic funding, ledger population, validation, and iterative resolution live in focused compiler modules.
 
-* **Policies** — contractual account behavior (interest, fees, etc.)
-* **Strategies** — management decisions (such as funding an account)
+## Design principles
 
-Both generate operations that are compiled into transactions.
+- Declarative configuration.
+- Strong domain vocabulary.
+- Accounts own account policies; plans own strategies.
+- Generated financial behavior is represented as operations and transactions.
+- Immutable public results.
+- Actual calendar semantics when dates are known.
+- Exact integer cents inside the simulation.
+- Compiler orchestration separated from domain-specific resolution.
+- Simplicity over premature generalization.
 
----
+## Current limitations
 
-## Roadmap
+Important known limitations include:
 
-Some ideas currently under development:
+- configuration validation is still incomplete;
+- operation transforms currently apply `amount` only even though additional transform fields are declared;
+- `daily` schedules are declared but not constructible;
+- business-calendar selection is not configurable;
+- some identities are generated and therefore not stable across recompilation;
+- operation-version identity after transforms still needs a stronger model;
+- same-day ordering is only partly formalized.
 
-* Additional account policies
-* Fee policies
-* Funding strategy improvements
-* Smarter balance convergence
-* More reporting capabilities
-* Improved JSON schema
-* Better testing coverage
+See the domain documentation for the precise current rules and gaps.
 
----
+## Documentation
+
+- `docs/transactor-domain-model.md` — domain vocabulary and relationships.
+- `docs/transactor-domain-rules.md` — observable rules and implementation status.
+- `docs/transactor-domain-gaps.md` — unresolved correctness, integrity, and design issues.
+- `docs/transactor-domain-README.md` — how these documents are maintained.
+
+## Direction
+
+Transactor is best understood today as a **financial simulation engine with a UI layered on top**. It may grow into a fuller financial planner and richer graphical model editor, but the engine and its domain model remain independently useful.
+
+Future input surfaces could all compile to the same financial model:
+
+```text
+Graphical editor ─┐
+Form editor      ├─→ Financial model → compiler → simulation result
+Raw JSON editor  ┘
+```
+
+A full DSL remains a possible future input form, not a current architectural requirement.
 
 ## Disclaimer
 
-This software is an experimental personal project.
-
-It should not be relied upon for financial decisions without independently verifying the results. Use at your own risk.
+This is experimental financial-planning software. Results should be independently verified before being used for consequential financial decisions.

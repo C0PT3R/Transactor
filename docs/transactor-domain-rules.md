@@ -1,169 +1,201 @@
 # Transactor domain rules
 
-This file lists observable financial and simulation rules. It is intended to become the basis for validation and automated tests.
+This file records observable domain behavior. Status describes the current source, not desired future behavior.
 
 ## 1. Plan and simulation period
 
-| ID | Rule | Status | Current evidence or gap |
-|---|---|---|---|
-| PLAN-001 | A plan has exactly one simulation end date. | Implemented | `FinancialModelOptions.endDate` is required. |
-| PLAN-002 | A plan has exactly one simulation start date. | Implemented | Explicit value or runtime default of tomorrow. |
-| PLAN-003 | Simulation boundaries are inclusive. | Implemented | Charge dates are accepted through `isBetween(start, end)` and account charging uses the same window. |
-| PLAN-004 | Start date must not be after end date. | Proposed | No explicit validation exists. |
-| PLAN-005 | The same persisted plan should produce the same result when inputs are unchanged. | Proposed | Omitted start date and generated IDs currently make results time-dependent and identity-unstable. |
-| PLAN-006 | Input should be validated before domain construction. | Proposed | Loader currently contains a validation TODO. |
+| ID | Rule | Status |
+|---|---|---|
+| PLAN-001 | A model has an inclusive simulation start and end date. | Implemented |
+| PLAN-002 | If start date is omitted, the current implementation starts tomorrow. | Implemented |
+| PLAN-003 | Configured/generated operation effective ranges are clipped to the simulation period. | Implemented |
+| PLAN-004 | Start date must not be after end date. | Partial — failures are not handled through a comprehensive input-validation boundary. |
+| PLAN-005 | The business calendar is currently Canadian and model-global. | Implemented limitation |
 
-## 2. Accounts
+## 2. Accounts and policies
 
-| ID | Rule | Status | Current evidence or gap |
-|---|---|---|---|
-| ACC-001 | Every account has an identifier. | Implemented | Missing IDs are generated. |
-| ACC-002 | Account identifiers are unique within a plan. | Proposed | Not validated. |
-| ACC-003 | Every account has a name. | Declared only | Type requires it, but runtime JSON is not validated. |
-| ACC-004 | Opening balance defaults to zero. | Implemented | Constructor applies `openingBalance ?? 0`. |
-| ACC-005 | Opening balances are stored as integer cents. | Implemented | Converted by `currencyToCents`. |
-| ACC-006 | Every referenced account must exist. | Partial | `getAccount` eventually rejects unknown IDs, but no early reference validation exists. |
-| ACC-007 | Account balance equals opening balance plus charged inflows minus charged outflows. | Implemented | `Account.charge`. |
+| ID | Rule | Status |
+|---|---|---|
+| ACC-001 | An account has an ID, name, opening balance, policies, and ledger. | Implemented |
+| ACC-002 | Missing account IDs may be generated. | Implemented |
+| ACC-003 | Account policies belong to accounts; planning strategies do not. | Implemented |
+| ACC-004 | Interest is an account policy. | Implemented |
+| ACC-005 | Account fees are account policies. | Implemented |
+| ACC-006 | Account lifetime/opening date is modeled independently from simulation start. | Proposed |
+| ACC-007 | Dated balance checkpoints/reconciliation are supported. | Proposed |
 
-## 3. Operations
+## 3. Operations and transforms
 
-| ID | Rule | Status | Current evidence or gap |
-|---|---|---|---|
-| OP-001 | An operation must define a source, a destination, or both. | Implemented | Enforced by `Operation` constructor. |
-| OP-002 | Source and destination must not be the same account. | Partial | Enforced only when a ledger entry is created. |
-| OP-003 | Operation amount cannot be negative. | Implemented | Enforced for configured and resolved amounts. |
-| OP-004 | Monetary operation amounts are stored as integer cents. | Implemented | Configured values converted; resolved values asserted. |
-| OP-005 | A configured standard operation must have a resolved amount before posting. | Partial | Null is accepted, then compilation eventually fails if no resolver exists. |
-| OP-006 | Only known operation kinds may have unresolved amounts. | Proposed | No kind-specific validation exists. |
-| OP-007 | Income has only a destination. | Implemented as classification | `isIncome`. |
-| OP-008 | Expense has only a source. | Implemented as classification | `isExpense`. |
-| OP-009 | Transfer has both source and destination. | Implemented as classification | `isTransfer`. |
-| OP-010 | Generated operations are distinguishable from configured operations. | Implemented | `origin`. |
-| OP-011 | Operation kinds distinguish standard, interest payment, and funding. | Implemented | `kind`. |
+| ID | Rule | Status |
+|---|---|---|
+| OP-001 | A configured operation may have source, destination, or both. | Implemented |
+| OP-002 | One-sided destination operations are inflows; one-sided source operations are outflows; two-sided operations are transfers. | Implemented |
+| OP-003 | Operation amounts are integer cents internally after conversion from configuration values. | Implemented |
+| OP-004 | Generated operations use the same transaction/ledger machinery as configured operations. | Implemented |
+| OP-005 | An authored operation may be split into effective-dated compiled versions. | Implemented |
+| CHG-001 | Transforms effective before simulation start are applied before the first compiled version. | Implemented |
+| CHG-002 | Transform dates split operation versions at the effective date. | Implemented |
+| CHG-003 | `amount` transforms are applied. | Implemented |
+| CHG-004 | Declared schedule transforms are applied. | Declared only |
+| CHG-005 | Declared day transforms are applied. | Declared only |
+| CHG-006 | Compiled versions have guaranteed unique IDs while preserving source lineage. | Proposed |
 
-## 4. Effective-dated operation changes
+## 4. Schedules
 
-| ID | Rule | Status | Current evidence or gap |
-|---|---|---|---|
-| CHG-001 | Changes are applied in chronological order. | Implemented | Changes are sorted before compilation. |
-| CHG-002 | A change is effective on its stated date. | Implemented | Prior version ends one day earlier. |
-| CHG-003 | An unspecified property retains its previous value. | Implemented for amount | Object copy plus nullish fallback. |
-| CHG-004 | Changes before simulation start still affect the first simulated version. | Implemented | Pre-start loop applies them. |
-| CHG-005 | Changes outside the operation's authored active period are ignored. | Implemented | Filtered against authored dates. |
-| CHG-006 | Amount may change. | Implemented | `applyTransform`. |
-| CHG-007 | Recurrence type may change. | Declared only | Field exists but is ignored. |
-| CHG-008 | Recurrence day may change. | Declared only | Field exists but is ignored. |
-| CHG-009 | Every operation version has a unique identity and a stable link to its definition. | Proposed | Multiple versions can currently share one configured ID. |
-| CHG-010 | Two changes on the same date have deterministic, documented semantics. | Partial | Stable sort/input order likely determines composition, but this is undocumented and unvalidated. |
+| ID | Rule | Status |
+|---|---|---|
+| SCH-001 | Schedule effective start/end dates are inclusive. | Implemented |
+| SCH-002 | `once` schedules require an explicit date and produce at most one occurrence. | Implemented |
+| SCH-003 | Weekly schedules are constructible. | Implemented |
+| SCH-004 | Biweekly schedules are constructible. | Implemented |
+| SCH-005 | Monthly schedules are constructible. | Implemented |
+| SCH-006 | Yearly schedules are constructible. | Implemented |
+| SCH-007 | Daily recurrence exists in shared types. | Implemented type only |
+| SCH-008 | Daily recurrence is constructible through `ScheduleFactory`. | Not implemented |
+| SCH-009 | Monthly day `-1` means month end. | Implemented |
+| SCH-010 | Monthly days beyond month length clamp to month end. | Implemented |
+| SCH-011 | Yearly day `-1` means the last day of the selected month. | Implemented |
+| SCH-012 | Yearly days beyond month length clamp to month end. | Implemented |
+| SCH-013 | Biweekly recurrence has an explicit user-defined anchor. | Proposed |
+| SCH-014 | Schedule selectors receive comprehensive range validation. | Proposed |
 
-## 5. Schedules and occurrences
+## 5. Model periods
 
-| ID | Rule | Status | Current evidence or gap |
-|---|---|---|---|
-| SCH-001 | Schedule start and end dates are inclusive. | Implemented | `isActive` and generators use inclusive comparisons. |
-| SCH-002 | A schedule is clipped to the simulation period. | Implemented | Operation compiler and generated behaviors clip dates. |
-| SCH-003 | Weekly schedules require a day selector. | Implemented at construction | Runtime range is not validated. |
-| SCH-004 | Biweekly schedules require a day selector. | Implemented at construction | Meaning is epoch modulo 14, not a documented weekday plus anchor. |
-| SCH-005 | Monthly schedules require a day selector. | Implemented at construction | Runtime range is not validated. |
-| SCH-006 | Yearly schedules require month and day selectors. | Implemented at construction | Runtime ranges are not validated. |
-| SCH-007 | Monthly day `-1` means last day of month. | Implemented | Monthly schedule. |
-| SCH-008 | A monthly day beyond month length is clamped to month end. | Implemented | Monthly schedule. |
-| SCH-009 | Yearly day `-1` means last day of selected month. | Implemented | Yearly schedule. |
-| SCH-010 | A yearly day beyond month length is clamped to month end. | Implemented | Yearly schedule. |
-| SCH-011 | Daily recurrence is supported. | Declared only | Registry maps `daily` to null and factory rejects it. |
-| SCH-012 | Schedule field values are validated with useful diagnostics. | Proposed | No configuration validation exists. |
-| SCH-013 | Biweekly schedules have an explicit anchor date. | Proposed | Current recurrence is globally anchored to epoch-day modulo 14. |
-| SCH-014 | Every occurrence belongs to exactly one operation version. | Implemented implicitly | Generator is called per version. |
+| ID | Rule | Status |
+|---|---|---|
+| MP-001 | `ModelPeriod` is a core concept and is included in `Result`. | Implemented |
+| MP-002 | A model period is a contiguous interval with a stable set of active non-once operations. | Implemented |
+| MP-003 | Simulation start creates the first boundary. | Implemented |
+| MP-004 | Recurring operation starts and the day after recurring operation ends create boundaries when inside the simulation. | Implemented |
+| MP-005 | One-time operations do not create model-period boundaries. | Implemented |
+| MP-006 | `dayCount` is the exact inclusive number of calendar days. | Implemented |
+| MP-007 | Model periods are separate nested `FinancialModel` instances. | Not implemented by design |
 
 ## 6. Posting dates and business days
 
-| ID | Rule | Status | Current evidence or gap |
-|---|---|---|---|
-| DATE-001 | A transaction records both scheduled date and posting/charge date. | Implemented | `Transaction`. |
-| DATE-002 | Only transactions whose charge date is inside the simulation period are included. | Implemented | `populateLedgers`. |
-| DATE-003 | The business-day policy may be none, next, or previous. | Implemented | Type and adjustment function. |
-| DATE-004 | Current adjustment order is business-day adjustment, processing delay, then business-day adjustment again. | Implemented | `resolveTransactionDate`. |
-| DATE-005 | The adjustment order is an intentional, documented domain rule. | Open decision | Current behavior may be accidental or may be correct. |
-| DATE-006 | The business calendar is selected by the plan or simulation context. | Proposed | Canada calendar is hard-coded. |
-| DATE-007 | Holiday rules include observed dates and applicable regional holidays. | Proposed | Current calendar is incomplete. |
-| DATE-008 | Good Friday is recognized correctly. | Partial | Implementation requires a value-comparison test for `LocalDate`. |
+| ID | Rule | Status |
+|---|---|---|
+| DATE-001 | Transactions record scheduled and charged dates. | Implemented |
+| DATE-002 | Only transactions whose charged date lies inside the simulation are included. | Implemented |
+| DATE-003 | Business-day policy supports none, next, and previous. | Implemented |
+| DATE-004 | Posting currently applies business-day adjustment, processing delay, then business-day adjustment again. | Implemented |
+| DATE-005 | That adjustment order is a formally settled domain rule. | Open decision |
+| DATE-006 | Business calendar is configurable per plan. | Proposed |
+| DATE-007 | Calendar logic should use `LocalDate` value/calendar APIs rather than duplicate leap-year arithmetic. | Implemented for current annualization/interest code |
 
-## 7. Transactions and ledger entries
+## 7. Transactions, ledger entries, and ordering
 
-| ID | Rule | Status | Current evidence or gap |
-|---|---|---|---|
-| TX-001 | One occurrence creates one transaction. | Implemented | `populateLedgers`. |
-| TX-002 | A transaction must have a resolved non-negative amount before posting. | Implemented late | Resolution is checked before/while charging and validating. |
-| TX-003 | Income creates exactly one inflow ledger entry. | Implemented | Destination ledger only. |
-| TX-004 | Expense creates exactly one outflow ledger entry. | Implemented | Source ledger only. |
-| TX-005 | Transfer creates two ledger entries linked to one transaction. | Implemented | Source and destination both receive the transaction. |
-| TX-006 | Transfer entries have equal amounts and opposite directions. | Implemented by shared transaction amount | No explicit aggregate assertion exists. |
-| TX-007 | Interest entries post before other same-day entries. | Implemented | Ledger sort. |
-| TX-008 | Other inflows post before outflows on the same day. | Implemented | Ledger sort. |
-| TX-009 | Same-day ordering among otherwise equivalent entries is deterministic. | Partial | Sort returns zero; effective order depends on stable sort and insertion order. |
-| TX-010 | Transaction IDs are stable across recompilation of unchanged inputs. | Not implemented | Result builder generates random IDs. |
-| TX-011 | Ledger-entry IDs are stable across recompilation of unchanged inputs. | Not implemented | Result builder generates random IDs. |
+| ID | Rule | Status |
+|---|---|---|
+| TX-001 | One schedule occurrence creates one transaction. | Implemented |
+| TX-002 | A transaction must have a resolved non-negative amount before charging. | Implemented |
+| TX-003 | Income creates one inflow ledger entry. | Implemented |
+| TX-004 | Expense creates one outflow ledger entry. | Implemented |
+| TX-005 | Transfer creates two ledger entries linked to one transaction. | Implemented |
+| TX-006 | Transfer entries share the same amount and have opposite directions. | Implemented |
+| TX-007 | Interest entries post before other same-day entries. | Implemented |
+| TX-008 | Other same-day inflows post before outflows. | Implemented |
+| TX-009 | Ordering among otherwise equivalent same-day entries is fully specified independent of insertion order. | Partial |
+| TX-010 | Zero-value financial effects may exist internally but are omitted from the public result. | Implemented |
+| TX-011 | Transaction and ledger-entry IDs are stable across recompilation. | Not implemented |
 
 ## 8. Interest
 
-| ID | Rule | Status | Current evidence or gap |
-|---|---|---|---|
-| INT-001 | Interest rate must be finite and non-negative. | Implemented | Interest operation constructor. |
-| INT-002 | Interest calculation period is daily. | Implemented | Other values rejected. |
-| INT-003 | Daily rate uses actual days in the current year. | Implemented | 365/366 denominator. |
-| INT-004 | Interest accrues on positive closing balance only. | Implemented | `balance > 0`. |
-| INT-005 | A payment includes accrual through the preceding day. | Implemented | Payment occurs before today's ordinary entries and before today's accrual. |
-| INT-006 | Accrued interest is rounded to cents on payment. | Implemented | `Math.round`. |
-| INT-007 | An account has at most one interest-payment operation. | Implemented | Resolver rejects more than one. |
-| INT-008 | The first interest payment follows at least one day of accrual. | Intended but not implemented | Comment states this, generated schedule does not enforce it. |
-| INT-009 | Interest and funding are solved consistently with each other. | Not implemented by design | Funding excludes interest, then interest is resolved. |
-| INT-010 | Negative-balance interest may be modeled. | Not implemented | Accrual is positive-balance only and always an inflow. |
+| ID | Rule | Status |
+|---|---|---|
+| INT-001 | Interest rate must be finite and non-negative. | Implemented |
+| INT-002 | Current interest calculation period is daily. | Implemented |
+| INT-003 | Daily interest uses the actual number of days in the current year via `LocalDate.daysInYear`. | Implemented |
+| INT-004 | Interest accrues only on positive closing balance. | Implemented |
+| INT-005 | A payment contains accrual through the preceding day. | Implemented |
+| INT-006 | Accrued interest is rounded to cents on payment. | Implemented |
+| INT-007 | An account may have at most one interest-payment operation. | Implemented |
+| INT-008 | Interest participates in iterative convergence with funding adjustment. | Implemented |
+| INT-009 | Interest on negative balances is modeled. | Not implemented |
+| INT-010 | The first interest payment is guaranteed to follow at least one completed accrual day. | Needs explicit test/confirmation |
 
-## 9. Funding
+## 9. Even-payments funding
 
-| ID | Rule | Status | Current evidence or gap |
-|---|---|---|---|
-| FUND-001 | Even-payments funding creates one generated recurring operation per strategy. | Implemented | Strategy generator. |
-| FUND-002 | Funding amount is constant across occurrences of one strategy period. | Implemented | Amount resolved on operation. |
-| FUND-003 | Funding amount is the smallest whole-cent equal payment found by the current algorithm that prevents a projected negative target balance after funding begins. | Implemented | Maximum deficit divided by payments seen, rounded up. |
-| FUND-004 | Funding periods for one account must not overlap. | Implemented | Explicit assertion. |
-| FUND-005 | Funding fails if the target becomes negative before the first funding payment. | Implemented | Explicit error. |
-| FUND-006 | Funding ignores interest during amount calculation. | Implemented by design | Explicit exclusion. |
-| FUND-007 | Funding may target a configurable minimum balance rather than zero. | Proposed | No target field exists. |
-| FUND-008 | Funding respects affordability of its source account. | Proposed | Source-account balance does not constrain the calculation. |
-| FUND-009 | Funding strategy source must reference an existing account when provided. | Partial | Eventually fails during ledger population, without early validation. |
+| ID | Rule | Status |
+|---|---|---|
+| FUND-001 | `evenPayments` generates one recurring funding operation. | Implemented |
+| FUND-002 | The funding schedule must be recurring; `once` is rejected. | Implemented |
+| FUND-003 | `minimumBalance` is optional and defaults to zero. | Implemented |
+| FUND-004 | `adjustInitialBalance` may disable initial adjustment. | Implemented |
+| FUND-005 | When adjustment is enabled, the strategy generates opposite one-time inflow/outflow adjustment operations. | Implemented |
+| FUND-006 | The signed initial adjustment may be positive or negative. | Implemented |
+| FUND-007 | Only one adjustment direction should resolve non-zero for a solution. | Implemented |
+| FUND-008 | Funding periods targeting the same account may not overlap. | Implemented |
+| FUND-009 | Deterministic funding uses `ModelPeriod`s and actual covered days. | Implemented |
+| FUND-010 | Daily requirements use actual covered day count. | Implemented |
+| FUND-011 | Annual proration across years uses each actual year's length. | Implemented |
+| FUND-012 | The deterministic seed divides total requirement by the actual number of generated funding occurrences. | Implemented |
+| FUND-013 | The deterministic seed rounds upward to whole cents and never below zero. | Implemented |
+| FUND-014 | With adjustment enabled, final recurring funding and initial adjustment are solved together rather than treating the seed as final. | Implemented |
+| FUND-015 | The hard balance target is `balance >= minimumBalance` throughout the strategy lifetime after applying the selected signed adjustment. | Implemented by resolver construction |
+| FUND-016 | Candidate solutions minimize time-weighted excess balance over the strategy lifetime. | Implemented |
+| FUND-017 | Equal scores prefer smaller absolute adjustment, then smaller recurring payment. | Implemented |
+| FUND-018 | Funding optimization currently uses one global recurring amount across the strategy lifetime, not one amount per model period. | Implemented |
+| FUND-019 | Source-account affordability constrains the strategy optimization. | Not implemented |
 
-## 10. Results and totals
+## 10. Iterative resolution
 
-| ID | Rule | Status | Current evidence or gap |
-|---|---|---|---|
-| RES-001 | Result DTO monetary values are integer cents. | Implemented | Shared types and builders. |
-| RES-002 | Result includes period, accounts, operations, transactions, and ledger entries. | Implemented | `Result`. |
-| RES-003 | Result accounts include opening and closing balances. | Implemented | Result builder. |
-| RES-004 | Result transactions reference their operation and ledger entries. | Implemented | IDs in DTO. |
-| RES-005 | Operation totals are normalized nominal equivalents, not actual period sums. | Implemented | `Totals.fromOperations` and conversion factors. |
-| RES-006 | Result identity is reproducible for unchanged input. | Not implemented | Random transaction and ledger IDs; generated account/operation IDs when omitted. |
-| RES-007 | Operation versions are unambiguously identifiable. | Partial | Duplicate IDs are possible after transformations. |
+| ID | Rule | Status |
+|---|---|---|
+| ITER-001 | Feedback-driven values implement a common iterative-resolver contract. | Implemented |
+| ITER-002 | Iteration continues until the maximum resolver delta is within monetary tolerance. | Implemented |
+| ITER-003 | Default tolerance is one cent. | Implemented |
+| ITER-004 | Default maximum iteration count is 100. | Implemented |
+| ITER-005 | Failure to converge within the maximum throws an error. | Implemented |
+| ITER-006 | Interest resolvers run before funding-adjustment resolvers in each pass. | Implemented |
+| ITER-007 | Recurring funding seed calculation itself is deterministic and runs before iterative resolution. | Implemented |
 
-## 11. Minimum test suite derived from the domain
+## 11. Calendar accuracy and annualization
 
-The following tests would give the documents practical force:
+| ID | Rule | Status |
+|---|---|---|
+| CALC-001 | Core annualization does not use an average 365.25-day year. | Implemented |
+| CALC-002 | Daily annualization uses the actual referenced year's `daysInYear`. | Implemented |
+| CALC-003 | Annual amounts prorated across multiple years are split internally and weighted by each actual year length. | Implemented |
+| CALC-004 | Weekly/monthly/etc. nominal conversions use conventional periods-per-year values. | Implemented |
+| CALC-005 | Nominal normalized totals are distinct from actual transaction sums over a finite interval. | Implemented |
 
-1. Reject simulation start after end.
+## 12. Results
+
+| ID | Rule | Status |
+|---|---|---|
+| RES-001 | Result monetary values are integer cents. | Implemented |
+| RES-002 | Result includes simulation period, model periods, accounts, operations, transactions, and ledger entries. | Implemented |
+| RES-003 | Account results include opening and closing balances. | Implemented |
+| RES-004 | Model-period results include exact day count, active operation IDs, inflow, outflow, and net totals. | Implemented |
+| RES-005 | Operation totals are nominal normalized equivalents, not actual simulation-period sums. | Implemented |
+| RES-006 | Public result identity is reproducible for unchanged input. | Not implemented |
+| RES-007 | Compiled operation versions are unambiguously identifiable. | Partial |
+
+## 13. Minimum test suite
+
+High-value tests should include:
+
+1. Reject invalid simulation ranges.
 2. Reject duplicate account IDs.
-3. Reject unknown source and destination IDs before compilation.
-4. Reject an operation with neither endpoint.
-5. Reject an operation whose source equals destination.
-6. Verify income, expense, and transfer ledger cardinality and directions.
-7. Verify monthly and yearly month-end clamping.
-8. Verify exact weekly and biweekly anchoring semantics.
-9. Verify posting-date adjustment order for weekend dates and delays.
-10. Verify changes before start, on start, during the period, and on end date.
-11. Verify that declared schedule/day changes either work or are rejected as unsupported.
-12. Verify interest opening-date behavior.
-13. Verify Good Friday recognition.
-14. Verify leap-year daily interest denominator.
-15. Verify funding failure before first payment.
-16. Verify non-overlapping funding periods.
-17. Verify same-day interest, inflow, and outflow ordering.
-18. Verify unique operation-version identity after transformations.
+3. Reject unknown account references before ledger population.
+4. Verify income, expense, and transfer ledger cardinality.
+5. Verify `once` schedule behavior and clipping.
+6. Verify monthly/yearly month-end clamping.
+7. Verify exact biweekly anchoring semantics.
+8. Verify posting-date adjustment order.
+9. Verify amount transforms before/on/inside the simulation period.
+10. Verify unsupported transform fields are rejected or explicitly documented.
+11. Verify model-period boundaries and exact inclusive day counts.
+12. Verify one-time events do not split model periods.
+13. Verify leap-year interest uses 366 days.
+14. Verify annual proration across a Dec/Jan boundary and across Feb 29.
+15. Verify even funding uses actual funding occurrence count.
+16. Verify `minimumBalance` above zero.
+17. Verify positive, zero, and negative initial funding adjustments.
+18. Verify funding/interest convergence.
+19. Verify one-cent convergence tolerance does not create material balance violations.
+20. Verify funding solution scoring is time-weighted by actual days.
+21. Verify zero-value transactions are absent from public results.
+22. Verify same-day interest/inflow/outflow ordering.
+23. Verify operation-version identity after transforms.

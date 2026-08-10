@@ -1,38 +1,52 @@
 # Domain documentation
 
-These files define the financial domain represented by Transactor and track the difference between the model the application currently implements and the model it is intended to implement.
+These documents define the financial domain represented by Transactor and track the difference between current behavior and intended behavior.
 
-They are design references, not generated API documentation. Their purpose is to keep the configuration format, core types, compiler, simulation behavior, result DTOs, tests, and future editors aligned around the same meanings.
+They are design references, not generated API documentation. Their purpose is to keep configuration, core types, compiler stages, results, tests, and future editors aligned around the same meanings.
 
 ## Files
 
-- [`domain-model.md`](./domain-model.md) defines the domain vocabulary, entities, value objects, relationships, and boundaries.
-- [`domain-rules.md`](./domain-rules.md) lists observable rules and invariants, including whether each rule is implemented, partial, or proposed.
-- [`domain-gaps.md`](./domain-gaps.md) tracks mismatches, missing capabilities, and decisions that still need to be made.
+- `transactor-domain-model.md` defines vocabulary, concepts, relationships, and boundaries.
+- `transactor-domain-rules.md` lists observable rules and their implementation status.
+- `transactor-domain-gaps.md` tracks unresolved correctness risks, integrity issues, limitations, and future decisions.
 
 ## Status vocabulary
 
-Each statement is marked with one of these statuses when its implementation state matters:
+- **Implemented** — current source clearly implements the behavior.
+- **Partial** — some form exists but is incomplete, narrower than intended, or not fully validated.
+- **Declared only** — configuration/types expose the concept but the engine does not implement it.
+- **Proposed** — recommended future behavior, not current behavior.
+- **Open decision** — the desired semantics are not yet settled.
 
-- **Implemented** — the current source code clearly enforces or produces this behavior.
-- **Partial** — some form of the behavior exists, but it is incomplete, inconsistent, or narrower than the intended model.
-- **Declared only** — the input or TypeScript type exposes the concept, but the compiler does not currently implement it.
-- **Proposed** — this is a recommended domain rule or concept, not current behavior.
-- **Open decision** — the domain meaning has not yet been chosen.
+## Architectural vocabulary
 
-## How to use these files
+The current documentation uses these distinctions deliberately:
 
-When adding or changing a feature:
+- **FinancialModel** — mutable working model assembled from declarative input.
+- **ModelPeriod** — contiguous simulation interval with a stable set of active recurring operations.
+- **Policy** — behavior owned by an account, such as interest or fees.
+- **Strategy** — plan-level management behavior, such as even funding.
+- **Operation** — instruction capable of producing scheduled occurrences.
+- **Transaction** — one realized occurrence of an operation.
+- **Ledger entry** — one account-side effect of a transaction.
+- **Result** — immutable public representation produced by compilation.
+- **Deterministic resolution** — values that can be derived directly before feedback convergence.
+- **Iterative resolution** — repeated resolution of mutually dependent values such as interest and funding adjustment.
 
-1. Identify the domain concept being changed.
-2. Update its definition in `domain-model.md` if its meaning changes.
-3. Add or update observable rules in `domain-rules.md`.
-4. Add tests for rules that become implemented.
-5. Remove or revise the corresponding item in `domain-gaps.md`.
-6. Check that JSON fields, core types, compiler stages, result DTOs, and UI wording use the same terminology.
+## How to update these files
 
-These documents should describe behavior, not mirror the class hierarchy. Class names may change without changing the domain. Conversely, a small code change can require a documentation update if it changes financial meaning.
+When changing behavior:
+
+1. Update the concept definition if its meaning changed.
+2. Update the observable rule and status.
+3. Remove or revise any gap that the change resolves.
+4. Add or update tests.
+5. Verify that JSON fields, TypeScript types, compiler terminology, result DTOs, and UI labels still agree.
+
+Do not document a desired behavior as implemented until the source actually supports it.
 
 ## Maintenance rule
 
-Documentation should distinguish facts from intentions. Do not rewrite a proposed rule as implemented until source code and tests support it. When behavior is accidental or uncertain, record it as an open decision rather than silently formalizing it.
+These documents describe **domain behavior**, not the class hierarchy. File moves and refactors do not automatically require domain changes. Conversely, a small implementation change can require a documentation update if it changes financial meaning.
+
+When behavior is uncertain, record the uncertainty instead of silently formalizing accidental implementation details.

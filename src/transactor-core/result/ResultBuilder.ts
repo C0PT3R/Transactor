@@ -54,8 +54,8 @@ function buildModelPeriodResults(
 	operations: readonly Operation[]
 ): readonly ModelPeriodResult[] {
 	return buildModelPeriods(startDate, endDate, operations).map(period => {
-		const inflow = Totals.fromOperations(period.operations.filter(operation => operation.isIncome()))
-		const outflow = Totals.fromOperations(period.operations.filter(operation => operation.isExpense()))
+		const inflow = Totals.fromOperations(period.operations.filter(operation => operation.isIncome()), period.startDate)
+		const outflow = Totals.fromOperations(period.operations.filter(operation => operation.isExpense()), period.startDate)
 
 		return {
 			startDate: period.startDate.toJSON(),
@@ -128,7 +128,7 @@ function buildOperation(operation: Operation, context: BuildContext): OperationR
 		startDate: operation.schedule.startDate.toJSON(),
 		endDate: operation.schedule.endDate.toJSON(),
 		transactionIds: transactions.map(transaction => requireTransactionId(context, transaction)),
-		totals: buildTotals(Totals.fromOperations([operation]))
+		totals: buildTotals(Totals.fromOperations([operation], operation.schedule.startDate))
 	}
 }
 

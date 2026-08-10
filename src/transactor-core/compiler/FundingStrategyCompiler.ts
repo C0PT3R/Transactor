@@ -3,6 +3,7 @@ import FinancialModel from "../model/FinancialModel"
 import { buildModelPeriods } from "../model/ModelPeriod"
 import type { ModelPeriod } from "../model/ModelPeriod"
 import FundingOperation from "../operations/FundingOperation"
+import { prorateAnnualAmount } from "../Annualization"
 
 export function resolveDeterministicFunding(model: FinancialModel): void {
 	const modelPeriods = buildModelPeriods(
@@ -56,8 +57,8 @@ function resolveEvenPaymentsFunding(
 	fundingOperation: FundingOperation,
 	modelPeriods: readonly ModelPeriod[]
 ): void {
-	let weightedAnnualRequirement = 0
-	let totalDays = 0
+	let totalRequirement = 0
+	let hasCoveredDays = false
 
 	for (const period of modelPeriods) {
 		const startDate = period.startDate > fundingOperation.schedule.startDate
@@ -70,32 +71,35 @@ function resolveEvenPaymentsFunding(
 		if (startDate > endDate)
 			continue
 
+		hasCoveredDays = true
 		const dayCount = endDate.epochDay - startDate.epochDay + 1
-		let annualRequirement = 0
 
 		for (const operation of period.operations) {
 			if (operation.isFunding() || operation.isInterestPayment())
 				continue
 
-			const yearlyAmount = operation.convertTo("yearly")
+			let requirement: number
+
+			if (operation.schedule.type === "daily") {
+				const amount = operation.getAmount() ?? 0
+				requirement = amount * dayCount
+			} else {
+				const yearlyAmount = operation.convertTo("yearly", startDate)
+				requirement = prorateAnnualAmount(yearlyAmount, startDate, endDate)
+			}
 
 			if (operation.from === account.id)
-				annualRequirement += yearlyAmount
+				totalRequirement += requirement
 			else if (operation.to === account.id)
-				annualRequirement -= yearlyAmount
+				totalRequirement -= requirement
 		}
-
-		weightedAnnualRequirement += annualRequirement * dayCount
-		totalDays += dayCount
 	}
 
-	if (totalDays === 0) {
+	if (!hasCoveredDays) {
 		fundingOperation.resolveAmount(0)
 		return
 	}
 
-	const averageAnnualRequirement = weightedAnnualRequirement / totalDays
-	const totalRequirement = averageAnnualRequirement * totalDays / 365.25
 	const fundingPaymentCount = account.getLedgerEntries().filter(
 		entry => entry.transaction.operation === fundingOperation
 	).length

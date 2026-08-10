@@ -5,6 +5,7 @@ import { BusinessCalendar } from "../calendar/BusinessCalendar"
 import IdGenerator from "../IdGenerator"
 import { assertCents, currencyToCents } from "../Money"
 import type { OperationKind, OperationOrigin, ScheduleType } from "../../transactor-common"
+import { periodsPerYear } from "../Annualization"
 import type { OperationData } from "../model/FinancialModelTypes"
 
 
@@ -23,14 +24,6 @@ export default class Operation {
 	public readonly kind: OperationKind
 	public readonly origin: OperationOrigin
 	private amount: number | null = null
-
-	private static readonly PERIODS_PER_YEAR: Record<Exclude<ScheduleType, "once">, number> = {
-		daily: 365.25,
-		weekly: 52,
-		biWeekly: 26,
-		monthly: 12,
-		yearly: 1,
-	} as const
 
 	public constructor(
 		data: OperationData,
@@ -67,15 +60,14 @@ export default class Operation {
 		)
 	}
 
-	public convertTo(period: Exclude<ScheduleType, "once">): number {
+	public convertTo(
+		period: Exclude<ScheduleType, "once">,
+		referenceDate: LocalDate
+	): number {
 		if (this.amount === null || this.schedule.type === "once") return 0
 
-		const yearlyAmount = this.amount * Operation.PERIODS_PER_YEAR[this.schedule.type]
-		return Math.round(yearlyAmount / Operation.PERIODS_PER_YEAR[period])
-	}
-
-	public static periodsPerYear(period: Exclude<ScheduleType, "once">): number {
-		return Operation.PERIODS_PER_YEAR[period]
+		const yearlyAmount = this.amount * periodsPerYear(this.schedule.type, referenceDate)
+		return Math.round(yearlyAmount / periodsPerYear(period, referenceDate))
 	}
 
 	public isIncome(): boolean {

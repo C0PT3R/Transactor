@@ -1,242 +1,230 @@
 # Domain gaps and decisions
 
-This file tracks differences between the current implementation and a coherent, explicitly defined domain model. It is not a promise that every item must be implemented. Items may be accepted as intentional limitations, changed, or removed.
+This file tracks unresolved differences between the current implementation and a robust, explicit domain model. Resolved historical gaps have been removed rather than kept as an implementation diary.
 
 ## Priority meanings
 
-- **P0 — correctness risk:** Existing behavior can be wrong, ambiguous, or silently misleading.
-- **P1 — model integrity:** Needed to make the current domain reliable and maintainable.
-- **P2 — capability completion:** A concept is already exposed or partially present but incomplete.
-- **P3 — future design:** Useful later, but not required to stabilize the current engine.
+- **P0 — correctness risk:** behavior may be wrong, ambiguous, or silently misleading.
+- **P1 — model integrity:** needed to make the current model reliable and maintainable.
+- **P2 — capability completion:** exposed or partially present behavior is incomplete.
+- **P3 — future design:** useful later, but not needed to stabilize the current engine.
 
 ## P0 — correctness risks
 
-### GAP-001: No runtime configuration validation
+### GAP-001: No comprehensive runtime configuration validation
 
-**Current state:** JSON is cast to `FinancialModelData` after parsing. The loader contains a validation TODO.
+**Current state:** Input is parsed into `FinancialModelData`, while validation remains distributed and late.
 
-**Risk:** Missing fields, invalid dates, invalid schedule values, duplicate IDs, unknown references, and unsupported combinations fail late or behave unpredictably.
+**Risk:** Invalid dates, duplicate IDs, bad selectors, unknown references, and unsupported combinations may fail only after construction/compilation.
 
-**Should be:** Validate structure, primitive values, date ranges, identifiers, references, recurrence-specific fields, and supported combinations before constructing the working model. Diagnostics should identify the JSON path and the violated rule.
+**Should be:** Introduce one validation boundary that reports structured diagnostics with the offending configuration path.
 
-**Suggested first step:** Add one validation boundary returning a list of diagnostics. Do not scatter all input validation through constructors.
+### GAP-002: Declared transform fields are silently ignored
 
-### GAP-002: Declared transformation fields are silently ignored
+**Current state:** `TransformData.params` exposes `schedule` and `day`, but `OperationCompiler.applyTransform()` applies only `amount`.
 
-**Current state:** `TransformData.params` declares `schedule` and `day`, but `applyTransform` applies only `amount`.
+**Risk:** Valid-looking configuration can be accepted while authored instructions have no effect.
 
-**Risk:** A valid-looking model can be accepted while producing a result that ignores authored instructions.
+**Should be:** Implement the fields or reject them explicitly as unsupported.
 
-**Should be:** Either implement these fields or reject them explicitly as unsupported. Silent acceptance should not continue.
+### GAP-003: Operation-version identity remains ambiguous
 
-### GAP-003: Interest opening-date behavior contradicts its source comment
+**Current state:** Transforms create multiple compiled `Operation` objects. A configured ID can therefore represent more than one compiled version.
 
-**Current state:** The comment says the first payment must follow at least one day of accrual and that the generated schedule begins one day after the model starts. The implementation does not add one day.
+**Risk:** UI selection, result maps, future graphical editing, comparison, and lineage can become ambiguous.
 
-**Risk:** A simulation beginning on an interest payment date may produce a zero-value payment on day one and reset accrual unnecessarily.
+**Should be:** Separate stable definition identity from compiled-version identity, or otherwise guarantee unique result operation IDs while preserving lineage.
 
-**Should be:** Choose the intended rule, implement it, and add tests. The likely intended rule is no payment before at least one completed accrual day.
+### GAP-004: Same-day ordering is only partly formalized
 
-### GAP-004: Operation-version identity is ambiguous
+**Current state:** Interest precedes other entries and inflows precede outflows, but otherwise equivalent entries can rely on stable sort/insertion order.
 
-**Current state:** An authored operation is split into multiple `Operation` objects after changes. If the source has an ID, every version receives that same ID.
+**Risk:** A future refactor can change intermediate balances and therefore interest/funding results without an obvious domain change.
 
-**Risk:** Result records may have duplicate operation IDs, breaking maps, UI selection, cross-references, and future editing.
+**Should be:** Define a deterministic final tie-break rule.
 
-**Should be:** Give each operation definition a stable definition ID and each compiled version a unique version ID, or otherwise guarantee unique result operation IDs while preserving lineage.
+### GAP-005: Funding convergence tolerance can hide a one-cent oscillation
 
-### GAP-005: Good Friday calculation may compare object identity
+**Current state:** Iterative resolution accepts a default maximum delta of one cent.
 
-**Current state:** `easter == date` compares two `LocalDate` objects.
+**Risk:** This is practical for rounded monetary feedback, but the final state can be one cent away from a strict fixed point. A future resolver with different semantics could treat that tolerance incorrectly.
 
-**Risk:** Good Friday may never be recognized unless the library implements primitive coercion compatible with this comparison.
-
-**Should be:** Add a direct test. If necessary, compare epoch days or use the library's value equality API.
+**Should be:** Keep the generic tolerance explicit and add tests proving that accepted convergence cannot violate hard strategy constraints materially.
 
 ## P1 — model integrity
 
-### GAP-006: Account and operation identifiers are not guaranteed stable
+### GAP-006: Persistent identity policy is not defined
 
-**Current state:** Missing IDs are randomly generated at load/compile time. Transaction and ledger IDs are randomly generated while building every result.
+**Current state:** Missing authored IDs and result transaction/ledger IDs may be generated.
 
-**Consequence:** The same model can produce structurally equivalent results with different identities, complicating UI state, comparison, caching, and future editor synchronization.
+**Consequence:** Structurally identical recompilations need not have identical identities.
 
-**Should be:** Decide which identities must be persistent and which are execution-local. At minimum, authored entities used as references should have stable IDs.
+**Should be:** Decide which IDs are persisted, deterministic, execution-local, or derived.
 
-### GAP-007: Duplicate IDs are not rejected
+### GAP-007: Duplicate IDs are not rejected early
 
-**Current state:** Accounts and operations are arrays without uniqueness validation.
+**Current state:** Accounts/operations are stored in arrays and there is no comprehensive uniqueness validation boundary.
 
-**Should be:** Enforce uniqueness in the relevant namespace. Decide whether accounts and operations share one global namespace or separate namespaces.
+**Should be:** Enforce uniqueness in documented namespaces.
 
 ### GAP-008: Unknown references fail late
 
-**Current state:** Account references are resolved while ledger entries are populated.
+**Current state:** Missing account references generally surface during model access or ledger population.
 
-**Should be:** Resolve and validate all references before generating occurrences. Diagnostics should identify the operation or strategy and offending field.
+**Should be:** Validate every `from`, `to`, strategy `target`, and strategy `from` reference before compilation.
 
-### GAP-009: Standard operations may carry unresolved amounts
+### GAP-009: FinancialModel still combines assembled definition and mutable execution objects
 
-**Current state:** `OperationData.amount` permits `null` for every operation. Only generated funding and interest have resolvers.
+**Current state:** `FinancialModel` owns mutable accounts, ledgers, generated operations, and strategies used during compilation.
 
-**Should be:** Make unresolved amounts a deliberate domain state associated with a known resolution mechanism. Reject unresolved configured standard operations unless a future expression or resolver is explicitly attached.
+**Consequence:** This is workable, but future editors/ASTs may need a cleaner separation between canonical authored model and execution model.
 
-### GAP-010: Same-day ordering is only partially specified
+**Should be:** Do not refactor prematurely. Revisit when a second input surface or live editor requires it.
 
-**Current state:** Interest precedes other entries; then inflows precede outflows; otherwise sort returns equality.
+### GAP-010: Business-calendar semantics are global and hard-coded
 
-**Consequence:** Multiple same-day inflows or outflows depend on insertion and stable-sort behavior. This may affect intermediate balances and strategies.
+**Current state:** `FinancialModel` constructs `CanadaBusinessCalendar`.
 
-**Should be:** Decide whether order among equivalent entries is financially meaningful. If it is, define a deterministic tie-breaker. If not, ensure no calculation relies on the intermediate order.
-
-### GAP-011: FinancialModel mixes definition and mutable execution state
-
-**Current state:** The class owns dates, account objects with mutable ledgers, compiled configured operations, and generated operations.
-
-**Should be:** No immediate rewrite is necessary. As the editor or alternate front ends appear, separate persisted plan data, validated domain definition, and simulation execution state.
+**Should be:** Eventually make calendar/jurisdiction part of model or simulation context if multiple calendars are needed.
 
 ## P2 — capability completion
 
-### GAP-012: Daily schedule is declared but not constructible
+### GAP-011: Daily schedule is declared but not constructible
 
-**Current state:** `ScheduleType` includes `daily`, but the registry maps it to `null`.
+**Current state:** `ScheduleType` contains `daily`, while the schedule registry maps it to `null`.
 
-**Should be:** Implement daily recurrence or remove/reject the option at the public type and validation boundary.
+**Should be:** Implement `DailySchedule` or remove/restrict the public declaration until supported.
 
-### GAP-013: Schedule `year` field has no defined behavior
+### GAP-012: Schedule `year` field has no clear role
 
-**Current state:** `ScheduleData.year` exists and is unused.
+**Current state:** `ScheduleData` exposes `year`, but recurring yearly behavior is based on month/day and effective dates.
 
-**Should be:** Remove it until needed or define its meaning. An unused accepted field should not imply support.
+**Should be:** Define and implement its meaning or remove it.
 
-### GAP-014: Schedule selectors lack range validation
+### GAP-013: Schedule selectors lack comprehensive range validation
 
-**Current state:** Constructors check presence, not valid ranges.
+Examples include invalid weekdays, months, and day selectors.
 
-**Examples requiring decisions:**
+**Should be:** Validate at the configuration boundary with useful diagnostics.
 
-- weekly day representation and range
-- biweekly phase/anchor representation
-- monthly accepted days, including `-1`
-- yearly month range
-- yearly day range
-- negative processing delay
+### GAP-014: Biweekly schedules have an implicit global anchor
 
-**Should be:** Define and validate each recurrence grammar explicitly.
+**Current state:** Recurrence is anchored by implementation rather than an explicit user-defined anchor date.
 
-### GAP-015: Biweekly schedules have an implicit global anchor
+**Should be:** Decide whether the current global phase is intentional. If not, expose an anchor.
 
-**Current state:** Occurrences are selected by epoch-day modulo 14.
+### GAP-015: Interest model is intentionally narrow
 
-**Consequence:** The `day` value is not self-explanatory and cannot naturally express “every second Tuesday beginning on a known payday.”
+Current interest supports positive-balance daily accrual and generated inflow payments.
 
-**Should be:** Introduce an anchor date or define a clear phase plus weekday representation.
+Not currently modeled:
 
-### GAP-016: Business calendar is hard-coded and incomplete
+- negative-balance/debt interest;
+- tiered rates;
+- variable rates;
+- alternate day-count conventions;
+- multiple simultaneous interest policies.
 
-**Current state:** Every model uses one Canada calendar with a small holiday list.
+These should remain future capabilities unless a concrete use case requires them.
 
-**Should be:** Eventually make the calendar part of simulation context. Before expanding it, define whether the purpose is bank-processing days, statutory holidays, employer business days, or another calendar.
+### GAP-016: Interest first-payment semantics need a dedicated test
 
-### GAP-017: Posting-date adjustment semantics need confirmation
+The resolver pays accrued interest through the preceding day, but the generated schedule's first occurrence should be tested explicitly when simulation start coincides with a payment date.
 
-**Current state:** Business-day adjustment occurs both before and after processing delay.
+### GAP-017: Funding ignores source-account affordability
 
-**Possible intended rules:**
+**Current state:** Even funding optimizes the target account. It does not constrain the solution based on whether the source account can afford the transfer.
 
-1. Adjust occurrence, then add business/processing delay, then adjust again.
-2. Add calendar-day delay, then adjust once.
-3. Add business days rather than calendar days.
+**Should be:** Keep this intentional unless strategy semantics later require cross-account feasibility.
 
-**Should be:** Choose one meaning and encode it through named concepts rather than an incidental sequence of calls.
+### GAP-018: Global vs per-ModelPeriod funding is not configurable
 
-### GAP-018: Interest model is narrow
+**Current state:** One even-payments strategy resolves one global recurring amount across its effective lifetime.
 
-**Current state:** Daily accrual on positive balance, periodic inflow, one policy per account.
+**Possible future behavior:** Recompute a different even payment for each stable `ModelPeriod`, similar to the older frame-based smoother.
 
-**Possible future needs:**
+This is not currently required.
 
-- debt interest
-- tiered rates
-- rate changes
-- minimum balances
-- different day-count conventions
-- withholding or fees
+### GAP-019: Even-funding trade-off is fixed
 
-**Should be:** Do not generalize now. Preserve the current rule as a specifically named positive-balance interest policy when a second kind appears.
+**Current state:** The strategy chooses the solution minimizing time-weighted excess balance, with deterministic tie-breakers.
 
-### GAP-019: Funding and interest are not jointly solved
+**Possible future behavior:** A user-facing preference/slider could bias toward:
 
-**Current state:** Funding ignores interest, then interest is resolved from funded balances. The compiler labels this conservative behavior.
+- larger initial reserve and lower recurring payments;
+- smaller initial adjustment and higher recurring payments;
+- the current balanced solution.
 
-**Should be:** Keep the limitation explicit. A fixed-point or iterative solver is only justified if material discrepancies appear in real scenarios.
+Do not introduce a generic strategy-objective framework until there is a concrete need.
 
-### GAP-020: Funding objective is hard-coded to zero minimum balance
+## P3 — future design
 
-**Current state:** The strategy attempts to prevent negative balance.
+### GAP-020: Account lifetime
 
-**Should be:** A later version may expose a target minimum balance. Do not add this until the current strategy's semantics and tests are stable.
+Accounts currently exist for the simulation as a whole.
 
-## P3 — future design, not current work
+Possible future model:
 
-### GAP-021: Canonical validated model for multiple editors
+- account effective/open date;
+- optional close date.
 
-A graphical editor, form editor, raw JSON editor, and possible textual DSL will eventually need one canonical validated domain representation. This is a future architectural requirement, not a reason to build an AST today.
+This is distinct from a balance checkpoint.
 
-### GAP-022: Structured calculated amounts
+### GAP-021: Dated balance checkpoint / reconciliation
 
-Future calculated amounts may require expressions, formulas, percentages, or references to other values. The current `number | null` model is sufficient for fixed and internally resolved amounts, but it should not be stretched into arbitrary opaque strings without a domain design.
+A real account may have a known balance on a date while its earlier balance is irrelevant.
+
+Possible future concept:
+
+- balance checkpoint;
+- reconciliation transaction;
+- `setAccountBalance(accountId, date)`-style live adjustment.
+
+This should not be conflated with account lifetime.
+
+### GAP-022: Canonical model for multiple editors
+
+Possible future input surfaces include:
+
+- graphical editor;
+- form editor;
+- raw JSON editor;
+- possibly a DSL.
+
+They should converge on one canonical financial model/AST rather than implementing separate simulation semantics.
 
 ### GAP-023: Scenario comparison and assumptions
 
-The engine may eventually compare alternate plans or assumptions. No scenario abstraction is currently required.
+The engine may eventually compare multiple plans or assumptions without mutating one canonical plan.
 
 ### GAP-024: Currency identity
 
-The engine stores cents but no currency. Add currency only when a real multi-currency or currency-formatting requirement appears.
+Money currently has amount precision but no currency identity.
 
-## Decisions to make before related code changes
+### GAP-025: Richer strategy composition
 
-### Decision A: What is the canonical name for `chargeDate`?
+Future strategies may depend on balances, thresholds, caps, excess-cash routing, or other strategies. The generic iterative resolver provides a foundation, but no generic optimization framework should be added until required.
 
-Candidates:
+## Decisions to preserve
 
-- posting date
-- effective date
-- charge date
+Several decisions are now sufficiently clear that they should not be reopened accidentally:
 
-`postingDate` is the most neutral for income, expense, and transfers.
-
-### Decision B: Is an operation a definition or a compiled version?
-
-Current code uses `Operation` for compiled effective versions. Documentation should continue distinguishing `operation definition` from `operation version`, even if class names remain unchanged.
-
-### Decision C: Are generated behaviors part of the persisted plan?
-
-Currently policies and strategies persist, while their generated operations do not. This is coherent and should remain the default unless the editor needs to expose generated operations as read-only derived objects.
-
-### Decision D: What does “business day” mean for this product?
-
-Possible meanings differ:
-
-- Canadian bank-processing day
-- federal statutory business day
-- provincial business day
-- user-defined calendar
-
-The answer determines the correct holiday set and adjustment behavior.
-
-### Decision E: Must results have stable identity?
-
-A display-only report can tolerate random execution-local IDs. An interactive editor, comparison view, persisted UI state, or incremental simulation likely cannot. Decide before building features that depend on identity.
+1. Account policies belong to accounts; funding strategies belong to the plan.
+2. Account fees are account policies.
+3. `ModelPeriod` is a core first-class concept, not renderer-derived state.
+4. Old frames should not return as nested `FinancialModel`s.
+5. Even funding currently uses one global recurring amount across the strategy lifetime.
+6. `minimumBalance` is a hard strategy constraint.
+7. Initial funding adjustment may be positive or negative.
+8. Interest and funding adjustment participate in generic iterative convergence.
+9. Calendar calculations should use actual `LocalDate` year lengths when dates are known.
+10. Zero-value internal transactions may exist, but public results should omit meaningless zero financial effects.
 
 ## Suggested implementation order
 
-1. Add configuration validation and diagnostics.
-2. Reject currently ignored transformation fields.
-3. Test and fix interest opening-date behavior.
-4. Test and fix Good Friday equality.
-5. Establish unique operation-version identity.
-6. Add core invariant tests for account references, transfers, schedules, posting order, interest, and funding.
-7. Decide and document schedule selector semantics, especially biweekly anchoring.
-8. Only then expand recurrence, calendars, or calculated amounts.
+1. Add comprehensive configuration/reference/ID validation.
+2. Resolve or reject unsupported transform fields.
+3. Add tests around same-day ordering and convergence tolerance.
+4. Define compiled operation-version identity.
+5. Decide whether `daily` should become constructible.
+6. Expand calendar or strategy capabilities only when driven by an actual use case.

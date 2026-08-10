@@ -2,556 +2,461 @@
 
 ## 1. Scope
 
-Transactor is currently a financial simulation engine with a user interface layered on top. It accepts a declarative financial plan, expands recurring rules into dated financial activity, resolves calculated amounts, applies the activity to accounts, and returns an immutable simulation result for presentation.
+Transactor is a declarative financial simulation engine. It models a financial plan over a finite simulation period and compiles that plan into transactions, account ledgers, balances, model periods, totals, and an immutable result.
 
-This document defines the financial concepts represented by the engine. It deliberately separates domain meaning from current class names and implementation details.
+The renderer is outside the financial domain. It consumes the result but should not invent core financial structure.
 
 ## 2. System boundary
 
-### Financial plan
+### 2.1 Declarative plan
 
-**Definition:** An authored description of accounts, operations, account behaviors, simulation dates, and scheduling rules.
+The persisted input currently consists of:
 
-**Current representation:** `FinancialModelData` loaded from JSON.
+- simulation options;
+- accounts;
+- configured operations;
+- account policies;
+- planning strategies.
 
-**Status:** Implemented, but unvalidated.
+Configuration monetary values are expressed in major currency units. Core simulation amounts are converted to integer cents.
 
-A financial plan is input. It is not itself a simulation result and should not contain mutable ledger state.
+### 2.2 Working FinancialModel
 
-### Working simulation model
+`FinancialModel` is the mutable working representation used during compilation.
 
-**Definition:** The mutable state used while compiling and executing a financial plan.
+It owns:
 
-**Current representation:** `FinancialModel`, `Account`, generated `Operation` objects, transactions, and ledger entries.
+- `startDate`;
+- `endDate`;
+- accounts;
+- configured and generated operations;
+- strategies;
+- the business calendar.
 
-**Status:** Implemented.
+If `startDate` is omitted, the current implementation starts the model tomorrow.
 
-The current `FinancialModel` combines normalized input, generated behavior, and mutable execution state. This is acceptable for the current stage, but those are conceptually separate responsibilities.
+The working model is not the public simulation result.
 
-### Simulation
+### 2.3 Compilation
 
-**Definition:** The execution of a financial plan over an inclusive date range using a calendar and deterministic rules.
+Compilation currently follows this high-level sequence:
 
-**Current representation:** `compile(model)`.
+```text
+populate ledgers
+    ↓
+resolve deterministic funding seed
+    ↓
+iteratively resolve feedback-driven values
+    ↓
+validate resolved transactions
+    ↓
+charge accounts
+    ↓
+build immutable Result
+```
 
-**Status:** Implemented.
+`Compiler.ts` coordinates these stages; detailed logic lives in compiler modules.
 
-### Simulation result
+### 2.4 Simulation result
 
-**Definition:** An immutable projection containing the period, accounts, operation versions, transactions, ledger entries, and derived totals.
+The public `Result` contains:
 
-**Current representation:** `Result` and related DTOs in `transactor-common`.
+- simulation period;
+- model periods;
+- accounts;
+- operations;
+- transactions;
+- ledger entries.
 
-**Status:** Implemented.
+Result monetary values are integer cents.
 
 ## 3. Core concepts
 
 ### 3.1 Simulation period
 
-**Definition:** The inclusive range of dates over which transactions may affect account balances and appear in the result.
+The simulation period is an inclusive `startDate` / `endDate` range.
 
-**Properties:**
+Configured operations, policy-generated operations, and strategy-generated operations are clipped to this range.
 
-- start date
-- end date
-
-**Current behavior:**
-
-- The end date is required.
-- The start date is optional and defaults to tomorrow at model construction time.
-- Transactions are included when their resolved charge date falls within the period.
-- Scheduled occurrences may be generated before the start date to allow delayed transactions to enter the simulation period.
-
-**Status:** Implemented.
-
-**Proposed terminology:** `simulationPeriod`, with `startDate` and `endDate` explicitly documented as inclusive.
-
-**Open issues:**
-
-- No validation currently ensures that the start date is on or before the end date.
-- A time-dependent default makes the same file produce different results on different days.
+The simulation period is a calculation boundary. It does not necessarily represent the real-world creation or closure dates of accounts.
 
 ### 3.2 Account
 
-**Definition:** A named container of monetary value whose simulated balance changes through ledger entries.
+An account is a balance-holding financial entity.
 
-**Essential properties:**
+Current properties include:
 
-- stable identifier
-- display name
-- opening balance
-- account policies
-- funding strategies
+- ID;
+- name;
+- opening balance;
+- account policies;
+- ledger.
 
-**Current behavior:**
+The opening balance is the balance from which the simulation begins. Account lifetime/effective dating is not currently modeled separately.
 
-- An identifier is accepted from configuration or generated at runtime.
-- Opening balances are converted from major currency units to integer cents.
-- An account owns a mutable ledger and mutable balance during simulation.
-- Accounts generate operations from policies and funding strategies.
+An account may receive or send transactions through operations.
 
-**Status:** Implemented.
+### 3.3 Account policy
 
-**Proposed invariants:**
+An account policy is behavior contractually or structurally owned by an account.
 
-- Account identifiers must be unique within a plan.
-- Account names need not be unique, but identifiers must be stable if persisted models or editors refer to them.
-- Every operation endpoint must refer to an existing account.
+Policies generate operations; they are not planning strategies.
 
-**Current gaps:**
+Current policy kinds:
 
-- Identifier uniqueness is not validated.
-- Generated identifiers make omitted IDs unstable across loads.
-- Account references are resolved only when transactions are populated, so errors are late and not tied to a JSON path.
+#### Interest policy
 
-### 3.3 Account behavior
+Defines:
 
-**Definition:** A rule attached to an account that generates operations during model preparation.
+- annual rate;
+- daily calculation period;
+- payment schedule.
 
-**Current categories:**
+It generates an interest-payment operation into the owning account.
 
-- policy
-- funding strategy
+#### Fee policy
 
-**Status:** Implemented.
+Defines:
 
-#### Account policy
+- fee name;
+- amount;
+- schedule.
 
-**Definition:** Contractual or intrinsic behavior of an account.
+It generates an expense operation from the owning account.
 
-**Current implementation:** Interest policy.
+### 3.4 Planning strategy
 
-**Status:** Implemented for one narrow policy type.
+A planning strategy is a plan-level management decision. It may reference accounts, but it is not owned by an account.
 
-#### Funding strategy
+Current strategy kind:
 
-**Definition:** A planning rule that generates money transfers intended to satisfy a balance objective.
+- `evenPayments`.
 
-**Current implementation:** Even-payments funding strategy.
+Strategies generate operations that participate in the same ledger and compilation machinery as configured operations.
 
-**Status:** Implemented with important limitations.
+### 3.5 Operation
 
-**Open decision:** Whether a funding strategy is truly intrinsic to an account or should eventually be a plan-level strategy targeting an account.
+An operation describes scheduled financial movement.
 
-### 3.4 Operation definition
+Current operation properties include:
 
-**Definition:** A rule describing one or more future movements of money.
+- ID;
+- name;
+- amount, which may temporarily be unresolved;
+- optional source account;
+- optional destination account;
+- schedule;
+- origin (`configured` or `generated`);
+- kind.
 
-**Essential properties:**
+An operation with only `to` is an inflow. An operation with only `from` is an outflow. An operation with both is a transfer.
 
-- identifier
-- name
-- amount, or an unresolved amount to be calculated
-- optional source account
-- optional destination account
-- schedule
-- optional effective-dated changes
+### 3.6 Generated operation kinds
 
-**Current representation:** Authored `OperationData`, generated account behavior, and compiled `Operation` instances.
+The core currently distinguishes:
 
-**Status:** Implemented, but several distinct concepts currently share the same class.
+- standard operations;
+- interest-payment operations;
+- funding operations.
 
-An operation may represent:
+Funding-adjustment operations are specialized generated operations used internally to represent the signed initial adjustment of an even-payments strategy.
 
-- an expense: source only
-- income: destination only
-- a transfer: source and destination
-- an interest payment generated by a policy
-- a funding transfer generated by a strategy
+### 3.7 Effective-dated operation transform
 
-**Implemented invariants:**
+A configured operation may declare transforms effective on specific dates.
 
-- At least one endpoint must be present.
-- Amounts may not be negative.
-- A ledger entry rejects a transfer whose source and destination are the same account.
+The operation compiler splits the authored operation into compiled operation versions whose effective periods do not overlap.
 
-**Proposed invariants:**
+Current transform implementation changes `amount` only.
 
-- Source and destination must differ before transaction generation.
-- Configured standard operations should normally have a resolved amount.
-- An unresolved amount should be allowed only for operation kinds with a defined resolver.
+The input type also declares schedule/day transformation fields, but they are not currently applied.
 
-### 3.5 Operation version
+### 3.8 Schedule
 
-**Definition:** The effective state of an operation definition over a specific date range.
+A schedule determines when an operation occurs and how its posting date is adjusted.
 
-**Current representation:** Each transformation segment becomes a separate `Operation` instance with its own schedule boundaries.
+Shared schedule types are:
 
-**Status:** Implemented implicitly.
+- `once`;
+- `daily`;
+- `weekly`;
+- `biWeekly`;
+- `monthly`;
+- `yearly`.
 
-An authored operation with changes is compiled into one or more versions. Each version is active for a non-overlapping inclusive period.
+Constructible schedules currently include all of the above except `daily`.
 
-**Current limitation:** Generated versions reuse the authored operation ID when one was provided. The result can therefore contain multiple operation records with the same ID after a transformation.
+#### One-time schedule
 
-**Proposed model:** Distinguish the stable operation-definition ID from the unique operation-version ID.
+A `once` schedule has an explicit `date`. It produces at most one occurrence.
 
-### 3.6 Effective-dated change
+One-time events do not define a stable recurring model state and therefore do not create `ModelPeriod` boundaries.
 
-**Definition:** A modification that becomes effective on a specified date and remains in force until superseded by a later change or the operation ends.
+#### Recurring schedule
 
-**Current name:** `TransformData` / `transforms`.
+Recurring schedules have an effective start and end date. Their occurrences are clipped to both the operation/strategy effective range and the simulation period.
 
-**Status:** Partial.
+#### Posting adjustment
 
-**Implemented behavior:**
+Schedules may specify:
 
-- Changes are sorted chronologically.
-- A change effective before or on the first simulated date is applied before the first version is created.
-- A version ends the day before the next change.
-- A change is effective inclusively on its date.
-- Changes outside the authored operation period are ignored.
-- The persisted source object is not mutated.
-- Amount changes are applied.
+- `processingDelay`;
+- `businessDayPolicy`.
 
-**Declared but not implemented:**
+The current operation posting algorithm applies business-day adjustment, then delay, then business-day adjustment again.
 
-- schedule type change
-- schedule day change
+### 3.9 ModelPeriod
 
-**Proposed terminology:** `changes` or `amendments` may communicate the domain meaning more precisely than `transforms`. No rename is required until terminology is settled.
+A `ModelPeriod` is a contiguous inclusive interval during which the set of active **non-once** operations is stable.
 
-### 3.7 Schedule
+A model-period boundary is created by:
 
-**Definition:** A rule that determines when an operation occurs, when it is active, and how an occurrence date is adjusted into a posting date.
+- simulation start;
+- the start of an active recurring operation;
+- the day after an active recurring operation ends.
 
-**Current representation:** `ScheduleData` and `Schedule` subclasses.
+A `ModelPeriod` contains:
 
-**Status:** Implemented for weekly, biweekly, monthly, and yearly recurrences; declared but unsupported for daily recurrence.
+- start date;
+- end date;
+- exact inclusive day count;
+- active operations.
 
-A schedule currently combines three conceptual parts:
+Model periods are not separate `FinancialModel` objects. They are structural views over one model.
 
-1. recurrence rule
-2. effective period
-3. date adjustment
+They are used by deterministic funding calculations and are emitted as first-class result data.
 
-These may remain one serialized object, but should be treated as separate meanings.
+### 3.10 Occurrence
 
-#### Recurrence rule
+An occurrence is a scheduled date produced by an operation's schedule.
 
-**Implemented recurrence types:**
+An occurrence is not yet an account movement. It becomes a transaction after posting-date rules are applied.
 
-- weekly
-- biweekly
-- monthly
-- yearly
+### 3.11 Transaction
 
-**Declared only:**
+A transaction is one realized occurrence of an operation.
 
-- daily
+It records:
 
-**Current semantics:**
+- scheduled date;
+- charged/posting date;
+- operation;
+- resolved amount.
 
-- Weekly and biweekly `day` values are epoch-day residues, not clearly documented weekdays.
-- Monthly day `-1` means the last day of the month.
-- A monthly day beyond the month length is clamped to the last day.
-- Yearly schedules similarly clamp an excessive day to the last day of the selected month.
-- Yearly day `-1` means the last day of the selected month.
+A transfer still has one transaction; its two account effects are represented by ledger entries.
 
-**Open issues:**
+### 3.12 Ledger entry
 
-- Valid ranges for day and month are not validated.
-- Biweekly recurrence has no authored anchor date; it is anchored to absolute epoch-day modulo 14.
-- The meaning of the unused `year` field is undefined.
+A ledger entry is one account-side effect of a transaction.
 
-#### Effective period
+It has:
 
-**Definition:** The inclusive dates during which a schedule may produce occurrences.
+- account;
+- transaction;
+- direction (`inflow` or `outflow`);
+- amount;
+- balance after charging in the public result.
 
-**Current behavior:** Operation-level start and end dates default to the simulation boundaries and are clipped to them.
+Income creates one inflow entry, expense one outflow entry, and transfer two opposite-direction entries.
 
-**Status:** Implemented.
+### 3.13 Balance
 
-#### Date adjustment
+Account balance is derived by charging ledger entries in posting order from the opening balance.
 
-**Definition:** Rules that convert the scheduled occurrence date into the date on which the transaction affects balances.
+Same-day ordering intentionally gives interest entries priority, then other inflows before outflows. Ordering among otherwise equivalent entries is not yet fully specified as a domain rule.
 
-**Current properties:**
+### 3.14 Interest
 
-- processing delay in days
-- business-day policy: none, next, or previous
+Interest is represented as a generated operation plus an iterative resolver.
 
-**Current behavior:**
+Current semantics:
 
-1. Apply the business-day policy to the scheduled date.
-2. Add the processing delay.
-3. Apply the same business-day policy again.
+- annual rate is non-negative;
+- accrual is daily;
+- only positive balances accrue interest;
+- the daily denominator is the actual number of days in that date's year via `LocalDate.daysInYear`;
+- an interest payment contains interest accrued through the preceding day;
+- accrued interest is rounded to cents at payment;
+- one account may have at most one generated interest-payment operation.
 
-**Status:** Implemented.
+Interest participates in iterative convergence with funding adjustments.
 
-**Open decision:** Confirm whether this two-stage adjustment is the intended financial meaning. An alternative is delay first, then adjust once.
+### 3.15 Even-payments funding strategy
 
-### 3.8 Occurrence
+The even-payments strategy exists to fund a target account with a constant recurring payment while respecting a target minimum balance.
 
-**Definition:** One activation of an operation version on a date produced by its recurrence rule.
+Configuration currently includes:
 
-**Current representation:** A `LocalDate` yielded by `Schedule.occurrences`; no explicit occurrence object exists.
+- `kind: "evenPayments"`;
+- optional name;
+- target account;
+- optional source account;
+- recurring schedule;
+- optional `adjustInitialBalance`;
+- optional `minimumBalance`, defaulting to zero.
 
-**Status:** Implemented implicitly.
+The strategy generates:
 
-**Proposed properties:**
+- one recurring `FundingOperation`;
+- when initial adjustment is enabled, two opposite one-time `FundingAdjustmentOperation`s representing the positive and negative sides of one signed adjustment.
 
-- operation version
-- scheduled date
+Only one adjustment side resolves to a non-zero amount.
 
-An explicit occurrence type is not required yet, but the concept is useful because it separates recurrence from transaction posting.
+#### Deterministic funding seed
 
-### 3.9 Transaction
+Before iterative convergence, the funding compiler estimates the total requirement over the strategy lifetime.
 
-**Definition:** A concrete movement of money produced from one occurrence of an operation version.
+It uses `ModelPeriod`s and actual covered day counts. Daily operations are multiplied by actual covered days. Other recurring amounts are annualized and prorated over exact calendar-year portions.
 
-**Current properties:**
+No average `365.25` year is used.
 
-- operation reference
-- scheduled date
-- charge date
-- optional per-transaction resolved amount override
+The total requirement is divided by the actual number of generated funding occurrences and rounded upward to the cent to produce the initial recurring funding seed.
 
-**Status:** Implemented.
+#### Joint funding/interest resolution
 
-**Current semantics:**
+When initial adjustment is enabled, the final recurring amount is not fixed by the deterministic seed.
 
-- A transaction inherits its amount from the operation unless a resolver supplies an override.
-- Interest resolution uses per-transaction overrides.
-- Funding resolution sets one amount on the generated funding operation, shared by all its transactions.
+For a fixed interest state, the funding-adjustment resolver searches recurring payment amounts. For each candidate it computes the signed adjustment required to move the lowest balance to `minimumBalance`.
 
-**Proposed terminology:** `postingDate` or `effectiveDate` is more neutral than `chargeDate`, because the same date is used for inflows and transfers.
+Candidate solutions are ranked by:
 
-**Proposed invariant:** A transaction must have a resolved non-negative amount before balances are applied and the result is built.
+1. lowest time-weighted excess balance above `minimumBalance`;
+2. smallest absolute initial adjustment;
+3. smallest recurring payment.
 
-### 3.10 Ledger entry
+The score uses end-of-day balances for each actual day in the strategy lifetime.
 
-**Definition:** The effect of one transaction on one account.
+Interest and funding are repeatedly re-resolved until all participating values move by no more than the configured cent tolerance.
 
-**Current properties:**
+### 3.16 Iterative resolution
 
-- transaction reference
-- direction: inflow or outflow
-- balance after posting
-- charged state
+Iterative resolution is a compiler mechanism for feedback-driven values.
 
-**Status:** Implemented.
+An iterative resolver reports its maximum change in cents. The compiler repeatedly runs all resolvers until the maximum change is within tolerance.
 
-**Current behavior:**
+Current defaults:
 
-- Income produces one inflow entry.
-- Expense produces one outflow entry.
-- Transfer produces one outflow and one inflow entry linked to the same transaction.
-- Entries are ordered by charge date.
-- Interest entries are applied before other entries on the same date.
-- Other same-day inflows are applied before outflows.
+- maximum iterations: 100;
+- convergence tolerance: 1 cent.
 
-**Proposed invariant:** A transfer must create exactly two entries of equal amount and opposite direction.
+Current iterative resolvers:
 
-### 3.11 Balance
+- interest;
+- even-funding adjustment/optimization.
 
-**Definition:** The monetary state of an account after applying charged ledger entries to its opening balance.
+Interest resolvers run before funding-adjustment resolvers in each pass so funding evaluates the current interest state.
 
-**Current representation:** Integer cents.
+### 3.17 Annualization and calendar accuracy
 
-**Status:** Implemented.
+When dates are known, Transactor uses actual calendar semantics.
 
-**Current semantics:**
+`LocalDate.daysInYear` supplies the actual 365/366-day year length.
 
-- Balances may become negative for ordinary accounts.
-- No overdraft, credit limit, minimum balance, or account-type rule exists.
-- Same-day ordering can affect intermediate balances and funding calculations.
+`prorateAnnualAmount()` splits an inclusive range internally at year boundaries and prorates each portion using that year's real length.
 
-### 3.12 Interest policy
+Conventional occurrence counts remain used for non-daily nominal conversions:
 
-**Definition:** A policy that accrues interest on an account balance and generates periodic interest-payment transactions.
+- weekly: 52;
+- biweekly: 26;
+- monthly: 12;
+- yearly: 1.
 
-**Current properties:**
+These nominal totals are distinct from exact transaction sums over a simulation period.
 
-- annual rate
-- calculation period, currently daily only
-- payment schedule, defaulting to monthly on day 1
+### 3.18 Business calendar
 
-**Status:** Partial.
+The working model currently uses `CanadaBusinessCalendar`.
 
-**Current implemented calculation:**
+Business-day policy can be:
 
-- Accrual is daily.
-- The denominator is 365 or 366 according to the current year.
-- Interest accrues only on a positive closing balance.
-- A payment contains interest accrued through the previous day.
-- Accrued interest is rounded to the nearest cent when paid.
-- Interest payments are posted before other transactions on the payment date.
-- Only one generated interest operation is allowed per account.
+- none;
+- next;
+- previous.
 
-**Known mismatch:** The source comment says the first payment must follow at least one day of accrual and that the schedule starts one day after the model begins. The implementation does not add that day. A model beginning on a matching payment date can currently generate a zero-value payment on its opening date.
+Calendar selection is not yet configurable at plan level.
 
-**Current limitations:**
+### 3.19 Money
 
-- Only incoming interest is modeled.
-- Negative-balance interest and debt interest are unsupported.
-- No compounding convention beyond periodic posting is configurable.
-- Funding is solved without interest, then interest is calculated afterward.
+Configuration values use major currency units.
 
-### 3.13 Even-payments funding strategy
+Core transaction and result calculations use integer cents. Resolvers update amounts in integer cents and convergence is defined in cents.
 
-**Definition:** A strategy that calculates a constant recurring transfer amount intended to prevent the target account from becoming negative during the strategy period.
+Currency identity itself is not currently modeled.
 
-**Current properties:**
+### 3.20 Totals
 
-- generated operation name
-- optional source account
-- target account, implied by attachment
-- schedule
+`TotalsResult` exposes nominal equivalents:
 
-**Status:** Partial.
+- daily;
+- weekly;
+- biweekly;
+- monthly;
+- yearly.
 
-**Current implemented calculation:**
+These are normalized rate equivalents, not necessarily the actual sum of transactions occurring in the simulation interval.
 
-- Funding periods for the same account may not overlap.
-- Existing non-interest transactions are projected in ledger order.
-- The resolver determines the greatest equal payment needed to cover any projected deficit after funding begins.
-- The result is rounded upward to a whole cent.
-- All occurrences of one funding operation share the same resolved amount.
-- Interest is excluded from the funding calculation.
-- The strategy fails if the account becomes negative before its first funding occurrence.
+### 3.21 Zero-value transactions
 
-**Current limitations:**
+Zero-value transactions may exist internally because suppressing their creation would complicate compilation.
 
-- The objective is implicit rather than represented as a general balance target.
-- No minimum reserve above zero is configurable.
-- No maximum payment or source-account affordability rule exists.
-- The source account may be omitted, creating external income rather than a transfer.
-- The strategy does not converge jointly with interest.
-
-### 3.14 Business calendar
-
-**Definition:** A calendar used to determine whether a date is a business day for posting adjustment.
-
-**Current implementation:** Hard-coded `CanadaBusinessCalendar`.
-
-**Status:** Partial.
-
-**Current holidays represented:**
-
-- New Year's Day
-- Good Friday, subject to an implementation concern described below
-- Canada Day
-- Labour Day
-- Thanksgiving
-- Christmas Day
-- Boxing Day
-
-**Current limitations:**
-
-- The calendar is not configurable.
-- Province-specific holidays are not represented.
-- Observed holidays are not represented.
-- Several Canadian holidays are absent.
-- Good Friday compares `LocalDate` objects with `==`; correctness depends on that library's coercion behavior and requires a test.
-
-### 3.15 Money
-
-**Definition:** Monetary amounts used by the simulation.
-
-**Current representation:**
-
-- Decimal major units at configuration boundaries.
-- Integer cents inside the core and result DTOs.
-
-**Status:** Implemented.
-
-**Current semantics:**
-
-- Configuration decimals are rounded to cents.
-- Internal values must be safe integers.
-- Currency identity is not represented; the model effectively assumes one unnamed currency.
-
-**Proposed future concept:** Introduce currency only when multiple currencies or currency-specific formatting becomes a real requirement.
-
-### 3.16 Totals
-
-**Definition:** Normalized periodic equivalents derived from an operation amount and recurrence frequency.
-
-**Current representation:** Daily, weekly, biweekly, monthly, and yearly totals on operation results.
-
-**Status:** Implemented as an estimate.
-
-**Current semantics:**
-
-- Daily uses 365.25 periods per year.
-- Weekly uses 52.
-- Biweekly uses 26.
-- Monthly uses 12.
-- Yearly uses 1.
-
-These totals normalize the nominal operation amount; they do not sum the actual transactions occurring in a specific simulation period.
+The result builder filters zero-value financial effects so they do not appear as meaningless public transaction/ledger noise.
 
 ## 4. Relationships
 
 ```text
-Financial plan
-├── defines simulation period
-├── defines accounts
-├── defines configured operation definitions
-└── selects or implies a business calendar
-
-Account
-├── owns opening balance
-├── has policies
-├── has funding strategies
-└── receives ledger entries during simulation
-
-Account behavior
-└── generates operation definitions or operation versions
-
-Operation definition
-├── references zero or one source account
-├── references zero or one destination account
-├── owns a schedule
-└── may own effective-dated changes
-
-Operation definition
-└── compiles into one or more operation versions
-
-Operation version
-└── produces scheduled occurrences
-
-Occurrence
-└── produces one transaction
-
-Transaction
-└── produces one or two ledger entries
-
-Ledger entry
-└── changes one account balance
+FinancialModel
+├── Accounts
+│   ├── opening balance
+│   ├── policies
+│   │   ├── interest → generated InterestPaymentOperation
+│   │   └── fee      → generated standard Operation
+│   └── ledger entries
+│
+├── Configured operations
+│   └── transforms → compiled operation versions
+│
+├── Strategies
+│   └── evenPayments
+│       ├── FundingOperation
+│       └── optional FundingAdjustmentOperations
+│
+├── ModelPeriods
+│   └── stable sets of active recurring operations
+│
+└── Compiler
+    ├── ledger population
+    ├── deterministic funding
+    ├── iterative resolution
+    │   ├── interest
+    │   └── funding adjustment
+    ├── validation
+    ├── account charging
+    └── ResultBuilder
 ```
 
-## 5. Recommended compiler vocabulary
+## 5. Domain boundaries
 
-The existing implementation does not need to be restructured immediately. The following vocabulary can nevertheless guide future changes:
+Policies and strategies are deliberately separate:
 
-```text
-source financial plan
-→ load
-→ structural validation
-→ reference resolution
-→ semantic validation
-→ compile operation versions
-→ generate account-behavior operations
-→ generate occurrences and transactions
-→ resolve calculated amounts
-→ post ledger entries
-→ build immutable result
-```
+- an **interest policy** belongs to an account because it describes how that account behaves;
+- an **account fee policy** belongs to an account for the same reason;
+- an **even-payments strategy** belongs to the plan because it describes how the user chooses to manage money between accounts.
 
-## 6. Concepts intentionally not defined yet
+`ModelPeriod` is a core simulation concept, not renderer-derived presentation state.
 
-The current domain does not need premature definitions for:
+The renderer should interpret result data rather than reconstruct financial rules that the core already knows.
 
-- custom textual DSL syntax
-- AST and concrete syntax tree architecture
-- graphical editor synchronization
-- loans and amortization
-- securities and market valuation
-- taxes
-- multiple currencies
-- uncertainty and probabilistic simulation
-- scenario inheritance
-- optimization beyond the existing funding strategy
+## 6. Concepts intentionally not settled
 
-Those should be introduced only when an actual feature requires them.
+The following remain intentionally open or incomplete:
+
+- account lifetime/opening-date semantics;
+- dated balance checkpoints/reconciliation;
+- stable identity for compiled operation versions;
+- configurable business calendars;
+- full transform semantics beyond amount;
+- constructible daily schedules;
+- strategy behavior that changes recurring funding per `ModelPeriod`;
+- user-selectable trade-off between larger initial reserve and lower recurring payment;
+- multiple currencies;
+- canonical AST/schema for future graphical/form/DSL editors.

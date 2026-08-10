@@ -70,17 +70,11 @@ export default class InterestResolver implements IterativeResolver {
 			}
 
 			if (balance > 0)
-				accruedInterest += balance * this.interestOperation.rate / daysInYear(date.year)
+				accruedInterest += balance * this.interestOperation.rate / date.daysInYear
 
 			date = date.plusDays(1)
 		}
 
 		return resolutionResult(maxDeltaCents)
 	}
-}
-
-function daysInYear(year: number): number {
-	return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0)
-		? 366
-		: 365
 }
